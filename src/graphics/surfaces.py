@@ -22,12 +22,16 @@ class TerrainSurface(GameSurface):
     def set_terrain(self, terrain: Terrain):
         self._terrain = terrain
 
+    def empty_screen(self):
+        self.surface.fill((0, 0, 0, 0))
+
     def update(self, game_sprites: gfx.GameSprites, coord: tuple[int, int] = None, full_screen: bool = False, 
                offsets: tuple[float, float] = None):
         
         if full_screen:
             # if the whole screen, as in the camera was moved or if the cave got restarted, itll run 
             # and set new offset coords while updating everything
+            self.empty_screen()
             self.off_x, self.off_y = offsets
             for y in range(self._terrain.grid_size):
                 for x in range(self._terrain.grid_size):
