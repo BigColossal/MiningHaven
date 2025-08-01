@@ -11,13 +11,15 @@ class Terrain:
         self.initialize_terrain()
 
         self._ore_amount = 3
-        self._ore_appearance_rate = 40
+        self._ore_appearance_rate = 30
         self.ore_base_chances = []
         self.create_ore_chances()
 
         self._ore_chances = {}
         self.ore_luck = 1
         self.modify_chances_with_luck()
+
+        self.edge_map = {}
 
 
     def initialize_terrain(self):
@@ -37,19 +39,29 @@ class Terrain:
         self.data[y][x] = terrainTypes.Floor
         self.visible_tiles.add(coord)
 
-        def check_surroundings(coord: tuple[int, int]):
-            x, y = coord
+        def check_surroundings(og_coord: tuple[int, int]):
+            x, y = og_coord
             changeable_terrain = []
-            coords_to_check = [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1), 
-                            (x - 1, y - 1), (x - 1, y + 1), (x + 1, y + 1), (x + 1, y -1)]
+            coords_to_check: list[tuple[str, tuple[int, int]]] = [("right", (x + 1, y)), ("left", (x - 1, y)), ("down", (x, y + 1)), ("up", (x, y - 1)), 
+                            ("top left", (x - 1, y - 1)), ("down left", (x - 1, y + 1)), ("down right", (x + 1, y + 1)), ("top right", (x + 1, y - 1))]
 
-            for coord in coords_to_check:
-                x, y = coord
-                if coord not in self.visible_tiles and (x >= 0 and x < self.grid_size) and (y >= 0 and y < self.grid_size):
-                    self.visible_tiles.add(coord)
-                    changeable_terrain.append(coord)
-                else:
-                    continue
+            adjacent_directions = ["right", "left", "down", "up"]
+            for direction, coord in coords_to_check:
+                new_x, new_y = coord
+                if (new_x >= 0 and new_x < self.grid_size) and (new_y >= 0 and new_y < self.grid_size):
+                    if direction in adjacent_directions:
+                        if self.data[new_y][new_x] != terrainTypes.Floor:
+                            if og_coord in self.edge_map:
+                                self.edge_map[og_coord].add(direction)
+                            else:
+                                self.edge_map[og_coord] = {direction}
+
+                    if coord not in self.visible_tiles:
+                        self.visible_tiles.add(coord)
+                        changeable_terrain.append(coord)
+                    else:
+                        continue
+
             return changeable_terrain
 
 

@@ -9,7 +9,14 @@ class GameSprites:
 
     def get_terrain_tile(self, terrain):
         terrain_name = terrain.name if hasattr(terrain, "name") else str(terrain)
-        return self.terrain_tileset.get(terrain_name, self.terrain_tileset.get("Default"))
+        return self.terrain_tileset.get(terrain_name)
+    
+    def get_outline_tile(self, direction):
+        """
+        Direction: Must be one of four (Up, Down, Left, Right)
+        """
+        return self.outlines_tileset.get(direction)
+
 
 def extract_sprites() -> GameSprites:
     ore_sheet = pg.image.load("assets/sprites/ore_sprite_sheet.png")
@@ -45,9 +52,9 @@ def extract_sprites() -> GameSprites:
     }
 
     outline_tileset = {
-        "down": get_tile(outline_sheet, TILE_SIZE, 0, 0),
-        "up": get_tile(outline_sheet, TILE_SIZE, 1, 1),
-        "left": get_tile(outline_sheet, TILE_SIZE, 1, 0),
-        "right": get_tile(outline_sheet, TILE_SIZE, 0, 1)
+        "Down": get_tile(outline_sheet, TILE_SIZE, 0, 0),
+        "Up": get_tile(outline_sheet, TILE_SIZE, 1, 1),
+        "Left": get_tile(outline_sheet, TILE_SIZE, 1, 0),
+        "Right": get_tile(outline_sheet, TILE_SIZE, 0, 1)
     }
     return GameSprites(terrain_tileset, shadow_tileset, outline_tileset)
