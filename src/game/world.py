@@ -5,6 +5,7 @@ class Terrain:
         import src.graphics as gfx
 
         self._surface: gfx.TerrainSurface = None
+        self._outlines: gfx.OutlineSurface = None
         self.data = []
         self.visible_tiles = set()
         self.grid_size = 10
@@ -31,6 +32,9 @@ class Terrain:
     def set_surface(self, terrain_surface):
         self._surface = terrain_surface
 
+    def set_outlines(self, outline_surface):
+        self._outlines = outline_surface
+
     def wipe_terrain_data(self):
         self.data = []
 
@@ -42,28 +46,38 @@ class Terrain:
         def check_surroundings(og_coord: tuple[int, int]):
             x, y = og_coord
             changeable_terrain = []
-            coords_to_check: list[tuple[str, tuple[int, int]]] = [("right", (x + 1, y)), ("left", (x - 1, y)), ("down", (x, y + 1)), ("up", (x, y - 1)), 
-                            ("top left", (x - 1, y - 1)), ("down left", (x - 1, y + 1)), ("down right", (x + 1, y + 1)), ("top right", (x + 1, y - 1))]
+            coords_to_check: list[tuple[str, tuple[int, int]]] = [("Right", (x + 1, y)), ("Left", (x - 1, y)), ("Down", (x, y + 1)), ("Up", (x, y - 1)), 
+                            ("Top Left", (x - 1, y - 1)), ("Down Left", (x - 1, y + 1)), ("Down Right", (x + 1, y + 1)), ("Top Right", (x + 1, y - 1))]
 
-            adjacent_directions = ["right", "left", "down", "up"]
+            adjacent_directions = ["Right", "Left", "Down", "Up"]
             for direction, coord in coords_to_check:
                 new_x, new_y = coord
-                if (new_x >= 0 and new_x < self.grid_size) and (new_y >= 0 and new_y < self.grid_size):
+                if (new_x >= 0 and new_x < self.grid_size) and (new_y >= 0 and new_y < self.grid_size): # check if in bounds
+
                     if direction in adjacent_directions:
-                        if self.data[new_y][new_x] != terrainTypes.Floor:
-                            if og_coord in self.edge_map:
-                                self.edge_map[og_coord].add(direction)
-                            else:
-                                self.edge_map[og_coord] = {direction}
+                        # edge map construction
+                        handle_edge_map(direction, og_coord, (new_x, new_y))
 
                     if coord not in self.visible_tiles:
+                        # visible terrain construction
                         self.visible_tiles.add(coord)
                         changeable_terrain.append(coord)
                     else:
                         continue
 
             return changeable_terrain
-
+        
+        def handle_edge_map(direction: str, og_coord: tuple[int, int], new_coord: tuple[int, int]):
+            new_x, new_y = new_coord
+            if self.data[new_y][new_x] != terrainTypes.Floor:
+                if og_coord in self.edge_map:
+                    self.edge_map[og_coord].add(direction)
+                else:
+                    self.edge_map[og_coord] = {direction}
+            else:
+                # if terrain being currently checked is a floor tile, remove its edge reference to the removed block
+                opposite_direction = {"Right": "Left", "Left": "Right", "Up": "Down", "Down": "Up"}[direction]
+                self.edge_map[new_coord].remove(opposite_direction)
 
         def create_ores(coords: list[tuple[int, int]]):
             """
@@ -99,7 +113,6 @@ class Terrain:
         surroundings_to_be_changed = check_surroundings(coord)
         create_ores(surroundings_to_be_changed)
 
-            
 
     def create_ore_chances(self):
         init_chance = 1.5

@@ -1,12 +1,16 @@
-from src.game import Terrain
+from src.game import Terrain, terrainTypes
 import src.graphics as gfx
 import pygame as pg
 
 terrain = Terrain()
 terrain_surface = gfx.TerrainSurface()
+outline_surface = gfx.OutlineSurface()
 
 terrain.set_surface(terrain_surface)
+terrain.set_outlines(outline_surface)
 terrain_surface.set_terrain(terrain)
+outline_surface.set_terrain(terrain)
+
 FPS = 60
 
 graphics_engine = gfx.RenderManager(terrain)
@@ -34,10 +38,11 @@ while True:
 
                 # Bounds check
                 if 0 <= tile_x < terrain.grid_size and 0 <= tile_y < terrain.grid_size:
-                    terrain.break_terrain(coord_broken)
-                    graphics_engine.break_terrain(coord_broken)
+                    if terrain.data[tile_y][tile_x] != terrainTypes.Floor:
+                        terrain.break_terrain(coord_broken)
+                        graphics_engine.break_terrain(coord_broken)
 
-
+        graphics_engine.update()
         graphics_engine.render()
         clock.tick(FPS)
 

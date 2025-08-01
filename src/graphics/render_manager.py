@@ -5,11 +5,12 @@ from src.game import Terrain
 class RenderManager:
     def __init__(self, terrain: Terrain):
         self.__screen = pg.display.set_mode((gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT))
-        pg.display.set_caption("My Game Screen")
+        pg.display.set_caption("Mining Mayhem")
         self._GAME_SPRITES = gfx.extract_sprites()
         self._terrain = terrain
         self.grid_size = self._terrain.grid_size
         self._terrain_surface: gfx.TerrainSurface = self._terrain._surface
+        self._outline_surface: gfx.OutlineSurface = self._terrain._outlines
 
         self.map_height, self.map_width = None, None
         self.offset_x, self.offset_y = None, None
@@ -28,16 +29,22 @@ class RenderManager:
         self.offset_y = -(gfx.SCREEN_HEIGHT - self.map_height) // 2
 
     def load_new_cave(self): # for drawing brand new caves
-        self._terrain_surface.draw_new_cave(self._GAME_SPRITES)
-        self._terrain_surface.update_dynamic((self.offset_x, self.offset_y))
+        self._terrain_surface.create_new_cave(self._GAME_SPRITES)
+        self._outline_surface.create_new_outline_surface()
 
     def fill(self, color): # fill background
         self.__screen.fill(color)
+
+    def update(self):
+        surfaces = [self._terrain_surface, self._outline_surface]
+        for surface in surfaces:
+            surface.update_dynamic((self.offset_x, self.offset_y))
 
     def render(self):
         self.fill(gfx.BG_COLOR)
 
         self.__screen.blit(self._terrain_surface.dynamic_surface, (0, 0))
+        self.__screen.blit(self._outline_surface.dynamic_surface, (0, 0))
         pg.display.flip()
 
     def break_terrain(self, coord: tuple[int, int]):
@@ -47,6 +54,7 @@ class RenderManager:
                             (x - 1, y - 1), (x - 1, y + 1), (x + 1, y + 1), (x + 1, y -1)]
         
         self._terrain_surface.update_static(self._GAME_SPRITES, coord)
+        self._outline_surface.update_static(self._GAME_SPRITES, coord)
         for coord in coords_to_check:
             x, y = coord
             if (x >= 0 and x < self.grid_size) and (y >= 0 and y < self.grid_size):
@@ -73,8 +81,6 @@ class RenderManager:
 
         self.offset_x += move_x * norm
         self.offset_y += move_y * norm
-
-        self._terrain_surface.update_dynamic((self.offset_x, self.offset_y))
 
 
 
