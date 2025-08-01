@@ -11,6 +11,7 @@ class RenderManager:
         self.grid_size = self._terrain.grid_size
         self._terrain_surface: gfx.TerrainSurface = self._terrain._surface
         self._outline_surface: gfx.OutlineSurface = self._terrain._outlines
+        self.surfaces = [self._terrain_surface, self._outline_surface]
 
         self.map_height, self.map_width = None, None
         self.offset_x, self.offset_y = None, None
@@ -36,8 +37,7 @@ class RenderManager:
         self.__screen.fill(color)
 
     def update(self):
-        surfaces = [self._terrain_surface, self._outline_surface]
-        for surface in surfaces:
+        for surface in self.surfaces:
             surface.update_dynamic((self.offset_x, self.offset_y))
 
     def render(self):
@@ -81,6 +81,9 @@ class RenderManager:
 
         self.offset_x += move_x * norm
         self.offset_y += move_y * norm
+
+        for surface in self.surfaces:
+            surface.dirty = True
 
 
 

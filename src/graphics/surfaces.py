@@ -7,6 +7,7 @@ class GameSurface:
         self.dynamic_surface = pg.Surface((gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT), pg.SRCALPHA)
         self.static_surface = None
         self.off_x, self.off_y = None, None
+        self.dirty = True
         self._terrain = None
 
     def set_terrain(self, terrain: Terrain):
@@ -23,9 +24,11 @@ class GameSurface:
 
     def update_dynamic(self, offsets: tuple[float, float]):
         # Update dynamic screen (used for refreshing the screen and for parts of gfx that are NOT static, like animations)
-        self.empty_dynamic_screen()
-        self.off_x, self.off_y = offsets
-        self.dynamic_surface.blit(self.static_surface, (-self.off_x, -self.off_y))
+        if self.dirty:
+            self.empty_dynamic_screen()
+            self.off_x, self.off_y = offsets
+            self.dynamic_surface.blit(self.static_surface, (-self.off_x, -self.off_y))
+            self.dirty = False
 
     def empty_dynamic_screen(self):
         self.dynamic_surface.fill((0, 0, 0, 0))
@@ -35,6 +38,7 @@ class TerrainSurface(GameSurface):
         super().__init__()
 
     def update_static(self, game_sprites: gfx.GameSprites, coord: tuple[int, int]):
+        self.dirty = True
         x, y = coord
         tile = game_sprites.get_terrain_tile(self._terrain.data[y][x])
         self.static_surface.blit(tile, (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE))
@@ -54,6 +58,7 @@ class OutlineSurface(GameSurface):
 
 
     def update_static(self, game_sprites: gfx.GameSprites, coord: tuple[int, int]):
+        self.dirty = True
         x, y = coord
         directions = self._terrain.edge_map[coord]
 
