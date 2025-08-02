@@ -13,10 +13,6 @@ class GameSurface:
     def set_terrain(self, terrain: Terrain):
         self._terrain = terrain
 
-    def create_eraser(self):
-        tile_eraser = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA)
-        return tile_eraser
-
     def create_static_surface(self):
         # Create new surface (static surfaces used for non moving tiles, such as terrain, shadows, outlines, UI, etc)
         grid_pixels = self._terrain.grid_size * gfx.TILE_SIZE
@@ -32,6 +28,8 @@ class GameSurface:
 
     def empty_dynamic_screen(self):
         self.dynamic_surface.fill((0, 0, 0, 0))
+
+
 
 class TerrainSurface(GameSurface):
     def __init__(self):
@@ -54,13 +52,14 @@ class TerrainSurface(GameSurface):
 class OutlineSurface(GameSurface):
     def __init__(self):
         super().__init__()
-        self.outline_map = {}
 
 
     def update_static(self, game_sprites: gfx.GameSprites, coord: tuple[int, int]):
         self.dirty = True
         x, y = coord
-        directions = self._terrain.edge_map[coord]
+        directions = []
+        if coord in self._terrain.edge_map:
+            directions = self._terrain.edge_map[coord]
 
 
         def create_outline_surf(edge_directions):
@@ -77,11 +76,11 @@ class OutlineSurface(GameSurface):
             return direction_log, outline_surface
         
 
-        all_directions, outl_surf = create_outline_surf(directions)
+        floors_surrounding, outl_surf = create_outline_surf(directions)
         self.static_surface.blit(outl_surf, (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE))
 
         direction_coords = {"Up": (x, y - 1), "Down": (x, y + 1), "Right": (x + 1, y), "Left": (x - 1, y)}
-        for direction in all_directions: # for all adjacent tiles that are floor
+        for direction in floors_surrounding: # for all adjacent tiles that are floor
             neighbor_floor_pos = direction_coords[direction]
             neigh_x, neigh_y = neighbor_floor_pos
 
@@ -99,6 +98,27 @@ class OutlineSurface(GameSurface):
 
     def create_new_outline_surface(self):
         self.create_static_surface()
+
+
+
+class ShadowSurface(GameSurface):
+    def __init__(self):
+        super().__init__()
+
+    #TODO
+    def update_static(self, game_sprites: gfx.GameSprites, coord: tuple[int, int]):
+        pass
+
+    def create_new_shadow_surface(self):
+        self.create_static_surface()
+
+
+
+
+
+
+
+
 
 
 

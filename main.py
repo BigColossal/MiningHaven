@@ -5,11 +5,14 @@ import pygame as pg
 terrain = Terrain()
 terrain_surface = gfx.TerrainSurface()
 outline_surface = gfx.OutlineSurface()
+shadow_surface = gfx.ShadowSurface()
 
 terrain.set_surface(terrain_surface)
 terrain.set_outlines(outline_surface)
+terrain.set_shadows(shadow_surface)
 terrain_surface.set_terrain(terrain)
 outline_surface.set_terrain(terrain)
+shadow_surface.set_terrain(terrain)
 
 FPS = 60
 

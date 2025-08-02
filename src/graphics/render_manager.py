@@ -11,7 +11,8 @@ class RenderManager:
         self.grid_size = self._terrain.grid_size
         self._terrain_surface: gfx.TerrainSurface = self._terrain._surface
         self._outline_surface: gfx.OutlineSurface = self._terrain._outlines
-        self.surfaces = [self._terrain_surface, self._outline_surface]
+        self._shadow_surface: gfx.ShadowSurface = self._terrain._shadows
+        self.surfaces = [self._terrain_surface, self._outline_surface, self._shadow_surface]
 
         self.map_height, self.map_width = None, None
         self.offset_x, self.offset_y = None, None
@@ -32,6 +33,7 @@ class RenderManager:
     def load_new_cave(self): # for drawing brand new caves
         self._terrain_surface.create_new_cave(self._GAME_SPRITES)
         self._outline_surface.create_new_outline_surface()
+        self._shadow_surface.create_new_shadow_surface()
 
     def fill(self, color): # fill background
         self.__screen.fill(color)
@@ -44,6 +46,7 @@ class RenderManager:
         self.fill(gfx.BG_COLOR)
 
         self.__screen.blit(self._terrain_surface.dynamic_surface, (0, 0))
+        self.__screen.blit(self._shadow_surface.dynamic_surface, (0, 0))
         self.__screen.blit(self._outline_surface.dynamic_surface, (0, 0))
         pg.display.flip()
 
@@ -55,6 +58,7 @@ class RenderManager:
         
         self._terrain_surface.update_static(self._GAME_SPRITES, coord)
         self._outline_surface.update_static(self._GAME_SPRITES, coord)
+        self._shadow_surface.update_static(self._GAME_SPRITES, coord)
         for coord in coords_to_check:
             x, y = coord
             if (x >= 0 and x < self.grid_size) and (y >= 0 and y < self.grid_size):

@@ -6,6 +6,7 @@ class Terrain:
 
         self._surface: gfx.TerrainSurface = None
         self._outlines: gfx.OutlineSurface = None
+        self._shadows: gfx.ShadowSurface = None
         self.data = []
         self.visible_tiles = set()
         self.grid_size = 10
@@ -34,6 +35,9 @@ class Terrain:
 
     def set_outlines(self, outline_surface):
         self._outlines = outline_surface
+
+    def set_shadows(self, shadow_surface):
+        self._shadows = shadow_surface
 
     def wipe_terrain_data(self):
         self.data = []

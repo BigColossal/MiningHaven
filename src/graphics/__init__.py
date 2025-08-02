@@ -1,6 +1,6 @@
 from .render_manager import RenderManager
 from .sprite_extraction import extract_sprites, GameSprites
-from .surfaces import TerrainSurface, OutlineSurface
+from .surfaces import TerrainSurface, OutlineSurface, ShadowSurface
 
 SCREEN_WIDTH = 1920
 SCREEN_HEIGHT = 1080

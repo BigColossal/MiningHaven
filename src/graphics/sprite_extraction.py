@@ -16,6 +16,9 @@ class GameSprites:
         Direction: Must be one of four (Up, Down, Left, Right)
         """
         return self.outlines_tileset.get(direction)
+    
+    def get_shadow_tile(self, direction):
+        return self.shadow_tileset.get(direction)
 
 
 def extract_sprites() -> GameSprites:
@@ -42,10 +45,10 @@ def extract_sprites() -> GameSprites:
     }
 
     shadow_tileset = {
-        "Top Left": get_tile(shadow_sheet, TILE_SIZE, 0, 0),
-        "Top Right": get_tile(shadow_sheet, TILE_SIZE, 1, 0),
-        "Bottom Left": get_tile(shadow_sheet, TILE_SIZE, 0, 1),
-        "Bottom Right": get_tile(shadow_sheet, TILE_SIZE, 1, 1),
+        "Up Left": get_tile(shadow_sheet, TILE_SIZE, 1, 1),
+        "Up Right": get_tile(shadow_sheet, TILE_SIZE, 0, 1),
+        "Down Left": get_tile(shadow_sheet, TILE_SIZE, 1, 0),
+        "Down Right": get_tile(shadow_sheet, TILE_SIZE, 0, 0),
         "Right": get_tile(shadow_sheet, TILE_SIZE, 2, 0),
         "Left": get_tile(shadow_sheet, TILE_SIZE, 2, 1),
         "Up": get_tile(shadow_sheet, TILE_SIZE, 0, 2),
