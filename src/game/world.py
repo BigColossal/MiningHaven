@@ -10,6 +10,7 @@ class Terrain:
         self.data = []
         self.visible_tiles = set()
         self.grid_size = 10
+        self.tile_amount = self.grid_size * self.grid_size
         self.initialize_terrain()
 
         self._ore_amount = 3
@@ -43,6 +44,9 @@ class Terrain:
         self.data = []
 
     def break_terrain(self, coord: tuple[int, int]):
+        if self.tile_amount > 0:
+            self.tile_amount -= 1
+            
         x, y = coord
         self.data[y][x] = terrainTypes.Floor
         self.visible_tiles.add(coord)
