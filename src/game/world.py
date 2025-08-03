@@ -1,17 +1,20 @@
-from src.game import terrainTypes
+
 
 class Terrain:
     def __init__(self):
         import src.graphics as gfx
+        from src.game import EventHandler
 
         self._surface: gfx.TerrainSurface = None
         self._outlines: gfx.OutlineSurface = None
         self._shadows: gfx.ShadowSurface = None
+        self._event_handler: EventHandler = None
         self.data = []
+
         self.visible_tiles = set()
-        self.grid_size = 10
+        self.grid_size = 50
         self.tile_amount = self.grid_size * self.grid_size
-        self.initialize_terrain()
+        self.wall_probability = 0.50
 
         self._ore_amount = 3
         self._ore_appearance_rate = 30
@@ -22,11 +25,130 @@ class Terrain:
         self.ore_luck = 1
         self.modify_chances_with_luck()
 
+        from src.game import terrainTypes
+        self.terrain_types = terrainTypes
+
         self.edge_map = {}
 
 
     def initialize_terrain(self):
-        self.data = [[terrainTypes.Stone for _ in range(self.grid_size)] for _ in range(self.grid_size)]
+        import random
+        #self.data = [[self.terrain_types.Stone for _ in range(self.grid_size)] for _ in range(self.grid_size)]
+        self.data = [[self.terrain_types.Stone if random.random() < self.wall_probability else self.terrain_types.Floor for _ in range(self.grid_size)] for _ in range(self.grid_size)]
+        floor = self.generate_cave()
+        self.initialize_map(floor)
+        
+
+    def generate_cave(self):
+        new_grid = [[self.terrain_types.Floor for _ in range(self.grid_size)] for _ in range(self.grid_size)]
+        coords_broken = []
+        for y in range(self.grid_size):
+            for x in range(self.grid_size):
+                wall_count = sum(
+                    self.data[ny][nx].value
+                    for ny in range(max(0, y-1), min(self.grid_size, y+2))
+                    for nx in range(max(0, x-1), min(self.grid_size, x+2))
+                    if (ny, nx) != (y, x)
+                )
+                if self.data[y][x] == self.terrain_types.Stone:
+                    if wall_count >= 4:
+                        new_grid[y][x] = self.terrain_types.Stone
+                    else:
+                        coords_broken.append((x, y))
+                else:
+                    if wall_count >= 5:
+                        new_grid[y][x] = self.terrain_types.Stone
+                    else:
+                        coords_broken.append((x, y))
+
+        for y in range(self.grid_size):
+            for x in range(self.grid_size):
+                floor_count = sum(
+                    1
+                    for dy, dx in [(-1, 0), (1, 0), (0, -1), (0, 1)]  # N, S, W, E
+                    if 0 <= y + dy < self.grid_size and 0 <= x + dx < self.grid_size
+                    and new_grid[y + dy][x + dx] == self.terrain_types.Floor
+                )
+                if new_grid[y][x] == self.terrain_types.Floor and floor_count < 2:
+                    new_grid[y][x] = self.terrain_types.Stone
+                    coords_broken.remove((x, y))
+        self._event_handler.call_tile_broken(coords_broken, new_grid, initialization=True)
+        self.data = new_grid
+        
+        return coords_broken
+
+    def initialize_map(self, coords_broken):
+        for coord in coords_broken:
+            changeable_terrain = self.check_surroundings(coord)
+            self.create_ores(changeable_terrain)
+
+    def check_surroundings(self, og_coord: tuple[int, int]):
+        x, y = og_coord
+        changeable_terrain = []
+        coords_to_check: list[tuple[str, tuple[int, int]]] = [("Right", (x + 1, y)), ("Left", (x - 1, y)), ("Down", (x, y + 1)), ("Up", (x, y - 1)), 
+                        ("Top Left", (x - 1, y - 1)), ("Down Left", (x - 1, y + 1)), ("Down Right", (x + 1, y + 1)), ("Top Right", (x + 1, y - 1))]
+
+        adjacent_directions = ["Right", "Left", "Down", "Up"]
+        for direction, coord in coords_to_check:
+            new_x, new_y = coord
+            if (new_x >= 0 and new_x < self.grid_size) and (new_y >= 0 and new_y < self.grid_size): # check if in bounds
+
+                if direction in adjacent_directions:
+                    # edge map construction
+                    self.handle_edge_map(direction, og_coord, (new_x, new_y))
+
+                if coord not in self.visible_tiles:
+                    # visible terrain construction
+                    self.visible_tiles.add(coord)
+                    if self.data[new_y][new_x] != self.terrain_types.Floor:
+                        changeable_terrain.append(coord)
+                else:
+                    continue
+
+        return changeable_terrain
+    
+    def handle_edge_map(self, direction: str, og_coord: tuple[int, int], new_coord: tuple[int, int]):
+        new_x, new_y = new_coord
+        if self.data[new_y][new_x] != self.terrain_types.Floor:
+            if og_coord in self.edge_map:
+                self.edge_map[og_coord].add(direction)
+            else:
+                self.edge_map[og_coord] = {direction}
+        else:
+            # if terrain being currently checked is a floor tile, remove its edge reference to the removed block
+            opposite_direction = {"Right": "Left", "Left": "Right", "Up": "Down", "Down": "Up"}[direction]
+            self.edge_map.get(new_coord, set()).discard(opposite_direction)
+
+    def create_ores(self, coords: list[tuple[int, int]]):
+        """
+        As ore will be created when theyre revealed, or adjacent to a floor tile and in other terms everything starts
+        as stone but gets converted to ore as theyre exposed as the player can upgrade their ore luck mid game, this will
+        handle the creation of the ore dependant on the luck
+        """
+        for coord in coords:
+            x, y = coord
+            ore_type = self.choose_ore_type()
+            self.data[y][x] = self.terrain_types(ore_type)
+
+    def choose_ore_type(self, ) -> int:
+        import random
+        """
+        Picks an ore index based on weighted chances in self._ore_chances.
+        """
+        chances = self._ore_chances
+        total = sum(chances.values())
+
+        rand_val = random.uniform(0, total)
+        cumulative = 0
+
+        for ore_index, weight in chances.items():
+            cumulative += weight
+            if rand_val <= cumulative:
+                return ore_index
+
+        # Fallback: just in case of float rounding edge cases
+        return 1
+
 
     def update_luck(self):
         self.ore_luck += 1
@@ -40,86 +162,27 @@ class Terrain:
     def set_shadows(self, shadow_surface):
         self._shadows = shadow_surface
 
+    def set_event_handler(self, event_handler):
+        self._event_handler = event_handler
+
     def wipe_terrain_data(self):
         self.data = []
 
-    def break_terrain(self, coord: tuple[int, int]):
+    def break_terrain(self, coord: tuple[int, int], initialization: bool, imported_grid=None):
+        if imported_grid:
+            grid = imported_grid
+        else:
+            grid = self.data
         if self.tile_amount > 0:
             self.tile_amount -= 1
             
         x, y = coord
-        self.data[y][x] = terrainTypes.Floor
+        grid[y][x] = self.terrain_types.Floor
         self.visible_tiles.add(coord)
 
-        def check_surroundings(og_coord: tuple[int, int]):
-            x, y = og_coord
-            changeable_terrain = []
-            coords_to_check: list[tuple[str, tuple[int, int]]] = [("Right", (x + 1, y)), ("Left", (x - 1, y)), ("Down", (x, y + 1)), ("Up", (x, y - 1)), 
-                            ("Top Left", (x - 1, y - 1)), ("Down Left", (x - 1, y + 1)), ("Down Right", (x + 1, y + 1)), ("Top Right", (x + 1, y - 1))]
-
-            adjacent_directions = ["Right", "Left", "Down", "Up"]
-            for direction, coord in coords_to_check:
-                new_x, new_y = coord
-                if (new_x >= 0 and new_x < self.grid_size) and (new_y >= 0 and new_y < self.grid_size): # check if in bounds
-
-                    if direction in adjacent_directions:
-                        # edge map construction
-                        handle_edge_map(direction, og_coord, (new_x, new_y))
-
-                    if coord not in self.visible_tiles:
-                        # visible terrain construction
-                        self.visible_tiles.add(coord)
-                        changeable_terrain.append(coord)
-                    else:
-                        continue
-
-            return changeable_terrain
-        
-        def handle_edge_map(direction: str, og_coord: tuple[int, int], new_coord: tuple[int, int]):
-            new_x, new_y = new_coord
-            if self.data[new_y][new_x] != terrainTypes.Floor:
-                if og_coord in self.edge_map:
-                    self.edge_map[og_coord].add(direction)
-                else:
-                    self.edge_map[og_coord] = {direction}
-            else:
-                # if terrain being currently checked is a floor tile, remove its edge reference to the removed block
-                opposite_direction = {"Right": "Left", "Left": "Right", "Up": "Down", "Down": "Up"}[direction]
-                self.edge_map[new_coord].remove(opposite_direction)
-
-        def create_ores(coords: list[tuple[int, int]]):
-            """
-            As ore will be created when theyre revealed, or adjacent to a floor tile and in other terms everything starts
-            as stone but gets converted to ore as theyre exposed as the player can upgrade their ore luck mid game, this will
-            handle the creation of the ore dependant on the luck
-            """
-            for coord in coords:
-                x, y = coord
-                ore_type = choose_ore_type()
-                self.data[y][x] = terrainTypes(ore_type)
-
-        def choose_ore_type() -> int:
-            import random
-            """
-            Picks an ore index based on weighted chances in self._ore_chances.
-            """
-            chances = self._ore_chances
-            total = sum(chances.values())
-
-            rand_val = random.uniform(0, total)
-            cumulative = 0
-
-            for ore_index, weight in chances.items():
-                cumulative += weight
-                if rand_val <= cumulative:
-                    return ore_index
-
-            # Fallback: just in case of float rounding edge cases
-            return 1
-        
-
-        surroundings_to_be_changed = check_surroundings(coord)
-        create_ores(surroundings_to_be_changed)
+        if not initialization:
+            surroundings_to_be_changed = self.check_surroundings(coord)
+            self.create_ores(surroundings_to_be_changed)
 
 
     def create_ore_chances(self):

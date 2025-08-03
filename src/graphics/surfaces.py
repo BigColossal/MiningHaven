@@ -224,7 +224,6 @@ class ShadowSurface(GameSurface):
 
 
 
-
     def create_new_shadow_surface(self):
         self.create_static_surface()
 

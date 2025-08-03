@@ -1,9 +1,12 @@
-from src.game import Terrain, terrainTypes
+from src.game import Terrain, terrainTypes, EventHandler
 import src.graphics as gfx
 import pygame as pg
 
+# order in all creation is important
 terrain = Terrain()
 terrain_surface = gfx.TerrainSurface()
+
+
 outline_surface = gfx.OutlineSurface()
 shadow_surface = gfx.ShadowSurface()
 
@@ -17,6 +20,11 @@ shadow_surface.set_terrain(terrain)
 FPS = 60
 
 graphics_engine = gfx.RenderManager(terrain)
+events_handler = EventHandler(graphics_engine, terrain)
+
+terrain.set_event_handler(events_handler)
+terrain.initialize_terrain()
+graphics_engine.load_new_cave()
 
 while True:
     pg.init()
@@ -31,19 +39,18 @@ while True:
             if event.type == pg.QUIT:
                 running = False
 
-            elif event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
-                mouse_x, mouse_y = pg.mouse.get_pos()
+            if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+                mouse_pos = pg.mouse.get_pos()
+                events_handler.handle_mouse_click(mouse_pos)
 
                 # Convert screen coords to grid coords
-                tile_x = int((mouse_x + graphics_engine.offset_x) // gfx.TILE_SIZE)
-                tile_y = int((mouse_y + graphics_engine.offset_y) // gfx.TILE_SIZE)
-                coord_broken = (tile_x, tile_y)
+                
 
-                # Bounds check
-                if 0 <= tile_x < terrain.grid_size and 0 <= tile_y < terrain.grid_size:
-                    if terrain.data[tile_y][tile_x] != terrainTypes.Floor:
-                        terrain.break_terrain(coord_broken)
-                        graphics_engine.break_terrain(coord_broken)
+            if event.type == events_handler.events.TILE_BROKEN.value:
+                for coord in event.positions:
+                    terrain.break_terrain(coord, event.initialization, event.new_grid)
+                    graphics_engine.break_terrain(coord)
+
 
         graphics_engine.update()
         graphics_engine.render()

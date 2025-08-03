@@ -20,8 +20,6 @@ class RenderManager:
         self.set_map_dimensions()
         self.set_initial_offset()
 
-        self.load_new_cave()
-
     def set_map_dimensions(self):
         total_pixels = self.grid_size * gfx.TILE_SIZE
         self.map_height, self.map_width = total_pixels, total_pixels
