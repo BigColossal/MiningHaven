@@ -3,7 +3,7 @@
 class Terrain:
     def __init__(self):
         import src.graphics as gfx
-        from src.game import EventHandler
+        from src.game import EventHandler, CaveHelper
 
         self._surface: gfx.TerrainSurface = None
         self._outlines: gfx.OutlineSurface = None
@@ -12,9 +12,9 @@ class Terrain:
         self.data = []
 
         self.visible_tiles = set()
-        self.grid_size = 50
+        self.grid_size = 20
         self.tile_amount = self.grid_size * self.grid_size
-        self.wall_probability = 0.50
+        self.middle = self.grid_size // 2
 
         self._ore_amount = 3
         self._ore_appearance_rate = 30
@@ -29,58 +29,15 @@ class Terrain:
         self.terrain_types = terrainTypes
 
         self.edge_map = {}
+        self._cave_helper: CaveHelper = CaveHelper(self)
 
 
     def initialize_terrain(self):
         import random
-        #self.data = [[self.terrain_types.Stone for _ in range(self.grid_size)] for _ in range(self.grid_size)]
-        self.data = [[self.terrain_types.Stone if random.random() < self.wall_probability else self.terrain_types.Floor for _ in range(self.grid_size)] for _ in range(self.grid_size)]
-        floor = self.generate_cave()
-        self.initialize_map(floor)
+        self.data = [[self.terrain_types.Stone for _ in range(self.grid_size)] for _ in range(self.grid_size)]
+        self._event_handler.call_tile_broken([(self.middle, self.middle)])
+        self._cave_helper.generate_caves()
         
-
-    def generate_cave(self):
-        new_grid = [[self.terrain_types.Floor for _ in range(self.grid_size)] for _ in range(self.grid_size)]
-        coords_broken = []
-        for y in range(self.grid_size):
-            for x in range(self.grid_size):
-                wall_count = sum(
-                    self.data[ny][nx].value
-                    for ny in range(max(0, y-1), min(self.grid_size, y+2))
-                    for nx in range(max(0, x-1), min(self.grid_size, x+2))
-                    if (ny, nx) != (y, x)
-                )
-                if self.data[y][x] == self.terrain_types.Stone:
-                    if wall_count >= 4:
-                        new_grid[y][x] = self.terrain_types.Stone
-                    else:
-                        coords_broken.append((x, y))
-                else:
-                    if wall_count >= 5:
-                        new_grid[y][x] = self.terrain_types.Stone
-                    else:
-                        coords_broken.append((x, y))
-
-        for y in range(self.grid_size):
-            for x in range(self.grid_size):
-                floor_count = sum(
-                    1
-                    for dy, dx in [(-1, 0), (1, 0), (0, -1), (0, 1)]  # N, S, W, E
-                    if 0 <= y + dy < self.grid_size and 0 <= x + dx < self.grid_size
-                    and new_grid[y + dy][x + dx] == self.terrain_types.Floor
-                )
-                if new_grid[y][x] == self.terrain_types.Floor and floor_count < 2:
-                    new_grid[y][x] = self.terrain_types.Stone
-                    coords_broken.remove((x, y))
-        self._event_handler.call_tile_broken(coords_broken, new_grid, initialization=True)
-        self.data = new_grid
-        
-        return coords_broken
-
-    def initialize_map(self, coords_broken):
-        for coord in coords_broken:
-            changeable_terrain = self.check_surroundings(coord)
-            self.create_ores(changeable_terrain)
 
     def check_surroundings(self, og_coord: tuple[int, int]):
         x, y = og_coord
@@ -179,6 +136,7 @@ class Terrain:
         x, y = coord
         grid[y][x] = self.terrain_types.Floor
         self.visible_tiles.add(coord)
+        self._cave_helper.check_if_in_cave((x, y))
 
         if not initialization:
             surroundings_to_be_changed = self.check_surroundings(coord)
