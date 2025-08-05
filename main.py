@@ -26,10 +26,11 @@ graphics_engine = gfx.RenderManager(terrain)
 events_handler = EventHandler(graphics_engine, terrain)
 
 terrain.set_event_handler(events_handler)
+graphics_engine.set_renderer_to_surfaces()
 terrain.initialize_terrain()
 graphics_engine.load_new_cave()
 
-while True:
+def main():
     pg.init()
     clock = pg.time.Clock()
     running = True
@@ -49,7 +50,6 @@ while True:
                 mouse_pos = pg.mouse.get_pos()
                 events_handler.handle_mouse_click(mouse_pos)
 
-                # Convert screen coords to grid coords
                 
 
             if event.type == events_handler.events.TILE_BROKEN.value:
@@ -68,7 +68,6 @@ while True:
                 graphics_engine.set_initial_offset()
                 graphics_engine.load_new_cave()
 
-        graphics_engine.update()
         graphics_engine.render(dt)
         dt = clock.tick(FPS)
 

@@ -15,7 +15,7 @@ class CaveHelper:
             cave_options = [CaveSizes.Medium]
             cave_option_weights = [100.0]
             cave_amount = round((self.grid_size - 10) // 2.5)
-        elif 100 >= self.grid_size >= 30:
+        elif 50 >= self.grid_size >= 30:
             cave_options = [CaveSizes.Medium, CaveSizes.Large]
             cave_option_weights = [75.0, 25.0]
             cave_amount = round(self.grid_size // 5)
@@ -135,7 +135,7 @@ class CaveHelper:
     
     def check_if_in_cave(self, coord: tuple[int, int]):
         coord_x, coord_y = coord
-        cave_rendered = []
+        cave_rendered = set()
         for cave_id, cave_data in self.caves.items():
             if not cave_data._rendered:
                 rect: list[tuple[int, int], tuple[int, int]] = cave_data.rect
@@ -150,7 +150,7 @@ class CaveHelper:
                         if cave_data.cave_grid[cave_coord_y][cave_coord_x] == self.terrain_types.Floor:
                             cave_data.update_rendered()
                             self.render_cave(cave_id)
-                            cave_rendered.append(cave_id)
+                            cave_rendered.add(cave_id)
 
         for cave in cave_rendered:
             del self.caves[cave]

@@ -12,7 +12,7 @@ class Terrain:
         self._event_handler: EventHandler = None
         self.data = []
 
-        self.grid_size = 21
+        self.grid_size = 50
         self.middle = None
         self.visible_tiles = None
 

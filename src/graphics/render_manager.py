@@ -4,7 +4,7 @@ from src.game import Terrain
 
 class RenderManager:
     def __init__(self, terrain: Terrain):
-        self.__screen = pg.display.set_mode((gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT))
+        self._screen = pg.display.set_mode((gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT))
         pg.display.set_caption("Mining Mayhem")
 
         self._GAME_SPRITES = gfx.extract_sprites()
@@ -18,6 +18,7 @@ class RenderManager:
 
         self.map_height, self.map_width = None, None
         self.offset_x, self.offset_y = None, None
+        self.dirty = True
 
         self.set_map_dimensions()
         self.set_initial_offset()
@@ -25,6 +26,10 @@ class RenderManager:
         self.lightening = False
         self.dark_alpha = 0
         self.lighten_buffer_duration = 1500
+
+    def set_renderer_to_surfaces(self):
+        for surface in self.surfaces:
+            surface.set_dynamic_screen(self._screen)
 
     def set_map_dimensions(self):
         total_pixels = self.grid_size * gfx.TILE_SIZE
@@ -41,27 +46,25 @@ class RenderManager:
         self._darkness_surface.create_new_cave()
 
     def fill(self, color): # fill background
-        self.__screen.fill(color)
-
-    def update(self):
-        for surface in self.surfaces:
-            surface.update_dynamic((self.offset_x, self.offset_y))
+        self._screen.fill(color)
 
     def render(self, dt):
-        self.fill(gfx.BG_COLOR)
+        if self.dirty == True:
+            self.fill(gfx.BG_COLOR)
 
-        self.__screen.blit(self._terrain_surface.dynamic_surface, (0, 0))
-        self.__screen.blit(self._shadow_surface.dynamic_surface, (0, 0))
-        self.__screen.blit(self._outline_surface.dynamic_surface, (0, 0))
-        self.__screen.blit(self._darkness_surface.dynamic_surface, (0, 0))
-        if self.darkening:
-            self.darken_screen(dt)
-        elif self.lightening:
-            self.lighten_screen(dt)
-        pg.display.flip()
+            for surface in self.surfaces:
+                surface.update_dynamic((self.offset_x, self.offset_y))
+
+            if self.darkening:
+                self.darken_screen(dt)
+            elif self.lightening:
+                self.lighten_screen(dt)
+            pg.display.flip()
+        self.dirty = False
 
     def break_terrain(self, coord: tuple[int, int]):
         # updates the broken terrain and its surroundings
+        self.dirty = True
         x, y = coord
         coords_to_check = [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1), 
                             (x - 1, y - 1), (x - 1, y + 1), (x + 1, y + 1), (x + 1, y -1)]
@@ -95,11 +98,11 @@ class RenderManager:
         else:
             norm = gfx.CAMERA_MOVEMENT_SPEED
 
-        self.offset_x += move_x * norm
-        self.offset_y += move_y * norm
+        self.offset_x += int(move_x * norm)
+        self.offset_y += int(move_y * norm)
+        
 
-        for surface in self.surfaces:
-            surface.dirty = True
+        self.dirty = True
 
     def darken_screen(self, dt):
         # Fade speed: pixels per second
