@@ -8,13 +8,13 @@ class Terrain:
         self._surface: gfx.TerrainSurface = None
         self._outlines: gfx.OutlineSurface = None
         self._shadows: gfx.ShadowSurface = None
+        self._darkness: gfx.DarknessSurface = None
         self._event_handler: EventHandler = None
         self.data = []
 
-        self.visible_tiles = set()
-        self.grid_size = 20
-        self.tile_amount = self.grid_size * self.grid_size
-        self.middle = self.grid_size // 2
+        self.grid_size = 21
+        self.middle = None
+        self.visible_tiles = None
 
         self._ore_amount = 3
         self._ore_appearance_rate = 30
@@ -34,6 +34,9 @@ class Terrain:
 
     def initialize_terrain(self):
         import random
+        self.visible_tiles = set()
+        self.middle = self.grid_size // 2
+        self.tile_amount = self.grid_size * self.grid_size
         self.data = [[self.terrain_types.Stone for _ in range(self.grid_size)] for _ in range(self.grid_size)]
         self._event_handler.call_tile_broken([(self.middle, self.middle)])
         self._cave_helper.generate_caves()
@@ -119,6 +122,9 @@ class Terrain:
     def set_shadows(self, shadow_surface):
         self._shadows = shadow_surface
 
+    def set_darkness(self, darkness_surface):
+        self._darkness = darkness_surface
+
     def set_event_handler(self, event_handler):
         self._event_handler = event_handler
 
@@ -181,3 +187,7 @@ class Terrain:
         normalized[1] = round(100 - self._ore_appearance_rate, 2)
 
         self._ore_chances = normalized
+
+    def check_if_cleared(self):
+        if self.tile_amount == 0:
+            self._event_handler.call_darkening_screen()

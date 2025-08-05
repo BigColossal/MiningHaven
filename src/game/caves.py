@@ -6,31 +6,33 @@ class CaveHelper:
         self.terrain_types: terrainTypes = self._terrain.terrain_types
         self.caves: dict[int: Cave] = {}
         self.cave_amount = 0
-        self.wall_probability = 0.25
+        self.wall_probability = 0.35
 
     def generate_caves(self):
         import random
+        cave_amount = 0
         if 30 > self.grid_size >= 20:
             cave_options = [CaveSizes.Medium]
             cave_option_weights = [100.0]
-            cave_amount = round((self.grid_size - 10) // 3.5)
+            cave_amount = round((self.grid_size - 10) // 2.5)
         elif 100 >= self.grid_size >= 30:
             cave_options = [CaveSizes.Medium, CaveSizes.Large]
             cave_option_weights = [75.0, 25.0]
-            cave_amount = round(self.grid_size // 7)
+            cave_amount = round(self.grid_size // 5)
 
-        for i in range(1, cave_amount + 1):
-            self.cave_amount += 1
-            cave_size = random.choices(cave_options, cave_option_weights, k=1)[0]
-            cave_pos = self.find_valid_cave_location(cave_size.value)
-            if not cave_pos and cave_size == CaveSizes.Large:
-                cave_size = CaveSizes.Medium
+        if cave_amount != 0:
+            for i in range(1, cave_amount + 1):
+                cave_size = random.choices(cave_options, cave_option_weights, k=1)[0]
                 cave_pos = self.find_valid_cave_location(cave_size.value)
+                if not cave_pos and cave_size == CaveSizes.Large:
+                    cave_size = CaveSizes.Medium
+                    cave_pos = self.find_valid_cave_location(cave_size.value)
 
-            if cave_pos:
-                cave_x, cave_y = cave_pos
-                width, height = cave_size.value, cave_size.value
-                self.generate_cave(cave_x, cave_y, width, height)
+                if cave_pos:
+                    self.cave_amount += 1
+                    cave_x, cave_y = cave_pos
+                    width, height = cave_size.value, cave_size.value
+                    self.generate_cave(cave_x, cave_y, width, height)
 
 
     def find_valid_cave_location(self, size: int):
@@ -101,11 +103,30 @@ class CaveHelper:
                 else:
                     coords_broken.append((x, y))
 
+        
+        for y in range(y_start, y_end):
+            for x in range(x_start, x_end):
+                local_y = y - y_start
+                local_x = x - x_start
+
+                floor_count = sum(
+                    1
+                    for dy, dx in [(-1, 0), (1, 0), (0, -1), (0, 1)]  # N, S, W, E
+                    if 0 <= local_y + dy < height and 0 <= local_x + dx < width
+                    and new_grid[local_y + dy][local_x + dx] == self.terrain_types.Floor
+                )
+
+                if new_grid[local_y][local_x] == self.terrain_types.Floor and floor_count < 2:
+                    new_grid[local_y][local_x] = self.terrain_types.Stone
+                    coords_broken.remove((x, y))
+
+
         self.caves[self.cave_amount] = Cave(coords_broken, new_grid, cave_rect)
     
+
     def render_cave(self, cave_id):
         cave_data: dict = self.caves[cave_id]
-        coords_visible, cave_grid = cave_data.floor, cave_data.cave_grid
+        coords_visible = cave_data.floor
         self._terrain._event_handler.call_tile_broken(coords_visible)
 
     def reset_caves(self):
@@ -114,6 +135,7 @@ class CaveHelper:
     
     def check_if_in_cave(self, coord: tuple[int, int]):
         coord_x, coord_y = coord
+        cave_rendered = []
         for cave_id, cave_data in self.caves.items():
             if not cave_data._rendered:
                 rect: list[tuple[int, int], tuple[int, int]] = cave_data.rect
@@ -128,6 +150,10 @@ class CaveHelper:
                         if cave_data.cave_grid[cave_coord_y][cave_coord_x] == self.terrain_types.Floor:
                             cave_data.update_rendered()
                             self.render_cave(cave_id)
+                            cave_rendered.append(cave_id)
+
+        for cave in cave_rendered:
+            del self.caves[cave]
 
 
 class Cave:
@@ -142,7 +168,5 @@ class Cave:
 
 from enum import Enum
 class CaveSizes(Enum):
-    Medium = 6
-    Large = 12
-
-            
+    Medium = 7
+    Large = 14

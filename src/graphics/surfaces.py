@@ -45,7 +45,8 @@ class TerrainSurface(GameSurface):
         self.create_static_surface()
         for y in range(self._terrain.grid_size):
             for x in range(self._terrain.grid_size):
-                self.update_static(game_sprites, (x, y))
+                if (x, y) in self._terrain.visible_tiles:
+                    self.update_static(game_sprites, (x, y))
 
 
 
@@ -227,17 +228,24 @@ class ShadowSurface(GameSurface):
     def create_new_shadow_surface(self):
         self.create_static_surface()
 
+class DarknessSurface(GameSurface):
+    def __init__(self):
+        super().__init__()
 
+    def update_static(self, coord, darken=True):
+        self.dirty = True
+        x, y = coord
+        if darken:
+            darkness_tile = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA)
+            darkness_tile.fill((1, 1, 1))
+            self.static_surface.blit(darkness_tile, (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE))
+        else:
+            self.static_surface.fill((0, 0, 0, 0), (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE,
+                                                gfx.TILE_SIZE, gfx.TILE_SIZE))
 
-
-
-
-
-
-
-
-
-
-
-
-
+    def create_new_cave(self):
+        self.create_static_surface()
+        for y in range(self._terrain.grid_size):
+            for x in range(self._terrain.grid_size):
+                if (x, y) not in self._terrain.visible_tiles:
+                    self.update_static((x, y))

@@ -3,6 +3,9 @@ from enum import Enum
 
 class GameEvents(Enum):
     TILE_BROKEN = pg.USEREVENT + 1
+    SCREEN_DARKENING = pg.USEREVENT + 2
+    SCREEN_LIGHTENING = pg.USEREVENT + 3
+    CAVE_CLEARED = pg.USEREVENT + 4
 
 class EventHandler:
     def __init__(self, graphics_engine, terrain):
@@ -27,6 +30,13 @@ class EventHandler:
     def call_tile_broken(self, coords, new_grid=None, initialization=False):
         pg.event.post(pg.event.Event(GameEvents.TILE_BROKEN.value, {'positions': coords, 'new_grid': new_grid,
                                                                     "initialization": initialization}))
+        
+    def call_cave_cleared(self):
+        pg.event.post(pg.event.Event(GameEvents.CAVE_CLEARED.value))
+        pg.event.post(pg.event.Event(GameEvents.SCREEN_LIGHTENING.value))
+
+    def call_darkening_screen(self):
+        pg.event.post(pg.event.Event(GameEvents.SCREEN_DARKENING.value))
 
     
 
