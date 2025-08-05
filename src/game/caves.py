@@ -11,22 +11,13 @@ class CaveHelper:
     def generate_caves(self):
         import random
         cave_amount = 0
-        if 30 > self.grid_size >= 20:
-            cave_options = [CaveSizes.Medium]
-            cave_option_weights = [100.0]
-            cave_amount = round((self.grid_size - 10) // 2.5)
-        elif 50 >= self.grid_size >= 30:
-            cave_options = [CaveSizes.Medium, CaveSizes.Large]
-            cave_option_weights = [75.0, 25.0]
-            cave_amount = round(self.grid_size // 5)
+        if 50 >= self.grid_size >= 20:
+            cave_amount = round((self.grid_size - 10) // 2)
 
         if cave_amount != 0:
             for i in range(1, cave_amount + 1):
-                cave_size = random.choices(cave_options, cave_option_weights, k=1)[0]
+                cave_size = CaveSizes.Large
                 cave_pos = self.find_valid_cave_location(cave_size.value)
-                if not cave_pos and cave_size == CaveSizes.Large:
-                    cave_size = CaveSizes.Medium
-                    cave_pos = self.find_valid_cave_location(cave_size.value)
 
                 if cave_pos:
                     self.cave_amount += 1
@@ -38,17 +29,17 @@ class CaveHelper:
     def find_valid_cave_location(self, size: int):
         import random
         attempts = 0
-        while attempts < 100:
+        while attempts < 200:
             x = random.randint(0, self.grid_size - size)
             y = random.randint(0, self.grid_size - size)
-
+            
             if self.is_cave_location_valid(x, y, size):
                 return x, y
             attempts += 1
         return None  # fallback if nothing found
     
     def is_cave_location_valid(self, x, y, size):
-        cave_buffer = 2
+        cave_buffer = 1
         middle_buffer = 3
         end_x, end_y = x + size, y + size
         for cave_id, cave_data in self.caves.items():
@@ -168,5 +159,4 @@ class Cave:
 
 from enum import Enum
 class CaveSizes(Enum):
-    Medium = 7
-    Large = 14
+    Large = 10
