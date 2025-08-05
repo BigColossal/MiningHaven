@@ -7,7 +7,6 @@ class GameSurface:
         self.dynamic_surface = None
         self.static_surface = None
         self.off_x, self.off_y = None, None
-        self.dirty = True
         self._terrain = None
 
     def set_terrain(self, terrain: Terrain):
@@ -34,7 +33,6 @@ class TerrainSurface(GameSurface):
         super().__init__()
 
     def update_static(self, game_sprites: gfx.GameSprites, coord: tuple[int, int]):
-        self.dirty = True
         x, y = coord
         tile = game_sprites.get_terrain_tile(self._terrain.data[y][x])
         self.static_surface.blit(tile, (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE))
@@ -53,7 +51,6 @@ class OutlineSurface(GameSurface):
         super().__init__()
 
     def update_static(self, game_sprites: gfx.GameSprites, coord: tuple[int, int]):
-        self.dirty = True
         x, y = coord
         directions = []
         if coord in self._terrain.edge_map:
@@ -118,7 +115,6 @@ class ShadowSurface(GameSurface):
             even if no edge data exists for a tile.
             - Neighbor tiles are proactively cleared and re-rendered to preserve lighting consistency.
         """
-        self.dirty = True  # Flag the surface as needing redraw
         x, y = coord
         directions = []
         
@@ -230,7 +226,6 @@ class DarknessSurface(GameSurface):
         super().__init__()
 
     def update_static(self, coord, darken=True):
-        self.dirty = True
         x, y = coord
         if darken:
             darkness_tile = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA)
@@ -246,3 +241,42 @@ class DarknessSurface(GameSurface):
             for x in range(self._terrain.grid_size):
                 if (x, y) not in self._terrain.visible_tiles:
                     self.update_static((x, y))
+
+class MinerSurface(GameSurface):
+    def __init__(self):
+        from src.game import Miner
+        super().__init__()
+        self.sprite = self.set_sprite()
+        self.miners: list[Miner] = None
+        self.miner_positions: dict[int: tuple[float, float]] = {}
+
+    def update_miner_amount(self):
+        self.miners = self._terrain._miners
+
+    def set_sprite(self):
+        surface = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA)
+
+        color = (100, 100, 10)
+        circle_size = int(gfx.TILE_SIZE / 2)
+        pg.draw.circle(surface, color, (circle_size, circle_size), circle_size)
+        return surface
+    
+    def update_static(self, coord, id):
+        """
+        This function is strictly for moving miners across the screen, not for updating animations
+        """
+        if id in self.miner_positions:
+            past_x, past_y = self.miner_positions[id]
+            self.static_surface.fill((0, 0, 0, 0), (past_x * gfx.TILE_SIZE, past_y * gfx.TILE_SIZE,
+                                                    gfx.TILE_SIZE, gfx.TILE_SIZE))
+                                                
+
+        x, y = coord
+        self.static_surface.blit(self.sprite, (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE))
+
+
+    def create_new_miner_surface(self):
+        self.create_static_surface()
+        for miner in self.miners:
+            self.update_static(miner.pos, miner.id)
+            self.miner_positions[miner.id] = miner.pos

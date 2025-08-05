@@ -14,7 +14,9 @@ class RenderManager:
         self._outline_surface: gfx.OutlineSurface = self._terrain._outlines
         self._shadow_surface: gfx.ShadowSurface = self._terrain._shadows
         self._darkness_surface: gfx.DarknessSurface = self._terrain._darkness
-        self.surfaces = [self._terrain_surface, self._outline_surface, self._shadow_surface, self._darkness_surface]
+        self._miner_surface: gfx.MinerSurface = self._terrain._miner_surface
+        self.surfaces = [self._terrain_surface, self._outline_surface, self._shadow_surface, 
+                         self._darkness_surface, self._miner_surface]
 
         self.map_height, self.map_width = None, None
         self.offset_x, self.offset_y = None, None
@@ -44,6 +46,8 @@ class RenderManager:
         self._outline_surface.create_new_outline_surface()
         self._shadow_surface.create_new_shadow_surface()
         self._darkness_surface.create_new_cave()
+        self._miner_surface.update_miner_amount()
+        self._miner_surface.create_new_miner_surface()
 
     def fill(self, color): # fill background
         self._screen.fill(color)

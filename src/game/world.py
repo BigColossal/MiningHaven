@@ -3,14 +3,17 @@
 class Terrain:
     def __init__(self):
         import src.graphics as gfx
-        from src.game import EventHandler, CaveHelper
+        from src.game import EventHandler, CaveHelper, Miner
 
         self._surface: gfx.TerrainSurface = None
         self._outlines: gfx.OutlineSurface = None
         self._shadows: gfx.ShadowSurface = None
         self._darkness: gfx.DarknessSurface = None
+        self._miner_surface: gfx.MinerSurface = None
         self._event_handler: EventHandler = None
         self.data = []
+
+        self._miners: list[Miner] = None
 
         self.grid_size = 50
         self.middle = None
@@ -40,6 +43,11 @@ class Terrain:
         self.data = [[self.terrain_types.Stone for _ in range(self.grid_size)] for _ in range(self.grid_size)]
         self._event_handler.call_tile_broken([(self.middle, self.middle)])
         self._cave_helper.generate_caves()
+        self.spawn_miners()
+    
+    def spawn_miners(self):
+        for miner in self._miners:
+            miner.spawn_miner()
         
 
     def check_surroundings(self, og_coord: tuple[int, int]):
@@ -124,6 +132,12 @@ class Terrain:
 
     def set_darkness(self, darkness_surface):
         self._darkness = darkness_surface
+
+    def set_miners(self, miners):
+        self._miners = miners
+
+    def set_miner_surface(self, miner_surface):
+        self._miner_surface = miner_surface
 
     def set_event_handler(self, event_handler):
         self._event_handler = event_handler

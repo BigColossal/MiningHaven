@@ -296,8 +296,8 @@ class CaveHelper:
                             self.render_cave(cave_id)
                             cave_rendered.add(cave_id)
 
-            for cave in cave_rendered:
-                del self.caves[cave]
+        for cave in cave_rendered:
+            del self.caves[cave]
 
 
 

@@ -1,4 +1,4 @@
-from src.game import Terrain, terrainTypes, EventHandler
+from src.game import Terrain, terrainTypes, EventHandler, Miner
 import src.graphics as gfx
 import pygame as pg
 
@@ -10,15 +10,23 @@ terrain_surface = gfx.TerrainSurface()
 outline_surface = gfx.OutlineSurface()
 shadow_surface = gfx.ShadowSurface()
 darkness_surface = gfx.DarknessSurface()
+miner_surface = gfx.MinerSurface()
+miners = []
+miner_amount = 1
+for i in range(miner_amount):
+    miners.append(Miner(terrain))
 
 terrain.set_surface(terrain_surface)
 terrain.set_outlines(outline_surface)
 terrain.set_shadows(shadow_surface)
 terrain.set_darkness(darkness_surface)
+terrain.set_miner_surface(miner_surface)
+terrain.set_miners(miners)
 terrain_surface.set_terrain(terrain)
 outline_surface.set_terrain(terrain)
 shadow_surface.set_terrain(terrain)
 darkness_surface.set_terrain(terrain)
+miner_surface.set_terrain(terrain)
 
 FPS = 60
 
