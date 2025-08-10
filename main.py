@@ -11,6 +11,8 @@ outline_surface = gfx.OutlineSurface()
 shadow_surface = gfx.ShadowSurface()
 darkness_surface = gfx.DarknessSurface()
 miner_surface = gfx.MinerSurface()
+object_surface = gfx.ObjectSurface()
+surfaces = [terrain_surface, outline_surface, shadow_surface, darkness_surface, miner_surface, object_surface]
 miners = []
 miner_amount = 1
 for i in range(miner_amount):
@@ -22,11 +24,9 @@ terrain.set_shadows(shadow_surface)
 terrain.set_darkness(darkness_surface)
 terrain.set_miner_surface(miner_surface)
 terrain.set_miners(miners)
-terrain_surface.set_terrain(terrain)
-outline_surface.set_terrain(terrain)
-shadow_surface.set_terrain(terrain)
-darkness_surface.set_terrain(terrain)
-miner_surface.set_terrain(terrain)
+terrain.set_object_surface(object_surface)
+for surface in surfaces:
+    surface.set_terrain(terrain)
 
 FPS = 60
 

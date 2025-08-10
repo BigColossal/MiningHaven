@@ -37,7 +37,7 @@ class TerrainSurface(GameSurface):
         tile = game_sprites.get_terrain_tile(self._terrain.data[y][x])
         self.static_surface.blit(tile, (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE))
 
-    def create_new_cave(self, game_sprites: gfx.GameSprites):
+    def load_new(self, game_sprites: gfx.GameSprites):
         self.create_static_surface()
         for y in range(self._terrain.grid_size):
             for x in range(self._terrain.grid_size):
@@ -90,7 +90,7 @@ class OutlineSurface(GameSurface):
                 self.static_surface.blit(neighbor_surf, (neigh_x * gfx.TILE_SIZE, neigh_y * gfx.TILE_SIZE))
             
 
-    def create_new_outline_surface(self):
+    def load_new(self):
         self.create_static_surface()
 
 
@@ -218,7 +218,7 @@ class ShadowSurface(GameSurface):
 
 
 
-    def create_new_shadow_surface(self):
+    def load_new(self):
         self.create_static_surface()
 
 class DarknessSurface(GameSurface):
@@ -235,7 +235,7 @@ class DarknessSurface(GameSurface):
             self.static_surface.fill((0, 0, 0, 0), (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE,
                                                 gfx.TILE_SIZE, gfx.TILE_SIZE))
 
-    def create_new_cave(self):
+    def load_new(self):
         self.create_static_surface()
         for y in range(self._terrain.grid_size):
             for x in range(self._terrain.grid_size):
@@ -258,7 +258,7 @@ class MinerSurface(GameSurface):
 
         color = (100, 100, 10)
         circle_size = int(gfx.TILE_SIZE / 2)
-        pg.draw.circle(surface, color, (circle_size, circle_size), circle_size)
+        pg.draw.circle(surface, color, (circle_size, circle_size), circle_size - 15)
         return surface
     
     def update_static(self, coord, id):
@@ -275,8 +275,26 @@ class MinerSurface(GameSurface):
         self.static_surface.blit(self.sprite, (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE))
 
 
-    def create_new_miner_surface(self):
+    def load_new(self):
         self.create_static_surface()
         for miner in self.miners:
             self.update_static(miner.pos, miner.id)
             self.miner_positions[miner.id] = miner.pos
+
+class ObjectSurface(GameSurface):
+    def __init__(self):
+        super().__init__()
+        self.objects: dict = {}
+
+    def set_objects(self):
+        self.objects = self._terrain._objects
+
+    def update_static(self, obj, game_sprites: gfx.GameSprites):
+        x, y = obj.pos
+        obj_sprite = game_sprites.get_object_tile(obj.name)
+        self.static_surface.blit(obj_sprite, (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE))
+
+    def load_new(self, game_sprites: gfx.GameSprites):
+        self.create_static_surface()
+        for obj_name, obj in self.objects.items():
+            self.update_static(obj, game_sprites)

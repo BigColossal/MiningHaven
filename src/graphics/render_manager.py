@@ -15,7 +15,8 @@ class RenderManager:
         self._shadow_surface: gfx.ShadowSurface = self._terrain._shadows
         self._darkness_surface: gfx.DarknessSurface = self._terrain._darkness
         self._miner_surface: gfx.MinerSurface = self._terrain._miner_surface
-        self.surfaces = [self._terrain_surface, self._outline_surface, self._shadow_surface, 
+        self._object_surface: gfx.ObjectSurface = self._terrain._object_surface
+        self.surfaces = [self._terrain_surface, self._object_surface, self._outline_surface, self._shadow_surface, 
                          self._darkness_surface, self._miner_surface]
 
         self.map_height, self.map_width = None, None
@@ -42,12 +43,16 @@ class RenderManager:
         self.offset_y = -(gfx.SCREEN_HEIGHT - self.map_height) // 2
 
     def load_new_cave(self): # for drawing brand new caves
-        self._terrain_surface.create_new_cave(self._GAME_SPRITES)
-        self._outline_surface.create_new_outline_surface()
-        self._shadow_surface.create_new_shadow_surface()
-        self._darkness_surface.create_new_cave()
+        self._object_surface.set_objects()
         self._miner_surface.update_miner_amount()
-        self._miner_surface.create_new_miner_surface()
+        for surface in self.surfaces:
+            if surface == self._terrain_surface or surface == self._object_surface:
+                surface.load_new(self._GAME_SPRITES)
+            else:
+                surface.load_new()
+
+
+
 
     def fill(self, color): # fill background
         self._screen.fill(color)

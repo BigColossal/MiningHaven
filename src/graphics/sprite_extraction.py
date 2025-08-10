@@ -2,10 +2,11 @@ import pygame as pg
 import src.graphics as gfx
 
 class GameSprites:
-    def __init__(self, terrain, shadows, outlines):
+    def __init__(self, terrain, shadows, outlines, objects):
         self.terrain_tileset = terrain
         self.shadow_tileset = shadows
         self.outlines_tileset = outlines
+        self.object_tileset = objects
 
     def get_terrain_tile(self, terrain):
         terrain_name = terrain.name if hasattr(terrain, "name") else str(terrain)
@@ -19,12 +20,16 @@ class GameSprites:
     
     def get_shadow_tile(self, direction):
         return self.shadow_tileset.get(direction)
+    
+    def get_object_tile(self, obj_name):
+        return self.object_tileset.get(obj_name)
 
 
 def extract_sprites() -> GameSprites:
     ore_sheet = pg.image.load("assets/sprites/ore_sprite_sheet.png")
     shadow_sheet = pg.image.load("assets/sprites/shadow_sprite_sheet.png")
     outline_sheet = pg.image.load("assets/sprites/outline_sprite_sheet.png")
+    object_sheet = pg.image.load("assets/sprites/object_sprite_sheet.png")
 
     def get_tile(sheet, tile_size, x, y):
         width, height = tile_size, tile_size
@@ -61,4 +66,9 @@ def extract_sprites() -> GameSprites:
         "Left": get_tile(outline_sheet, TILE_SIZE, 0, 0),
         "Right": get_tile(outline_sheet, TILE_SIZE, 1, 0)
     }
-    return GameSprites(terrain_tileset, shadow_tileset, outline_tileset)
+
+    object_tileset = {
+        "Ladder": get_tile(object_sheet, TILE_SIZE, 0, 0)
+    }
+
+    return GameSprites(terrain_tileset, shadow_tileset, outline_tileset, object_tileset)

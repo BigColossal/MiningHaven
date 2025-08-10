@@ -10,6 +10,6 @@ class Miner():
         self._terrain: Terrain = terrain
 
     def spawn_miner(self):
-        cave_mid = (self._terrain.middle, self._terrain.middle)
+        cave_mid = (self._terrain.middle - 1, self._terrain.middle - 1)
         self.pos = cave_mid
 
