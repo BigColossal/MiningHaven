@@ -76,6 +76,9 @@ def main():
                 graphics_engine.set_initial_offset()
                 graphics_engine.load_new_cave()
 
+        terrain.miner_decision_make()
+        graphics_engine.check_miner_pos()
+
         graphics_engine.render(dt)
         dt = clock.tick(FPS)
 

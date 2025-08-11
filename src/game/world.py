@@ -57,6 +57,10 @@ class Terrain:
         for miner in self._miners:
             miner.spawn_miner()
 
+    def miner_decision_make(self):
+        for miner in self._miners:
+            miner.decision_make()
+
     def create_object(self, name, pos):
         from src.game import GameObject
         obj = GameObject(name, pos)
@@ -168,7 +172,6 @@ class Terrain:
             grid = self.data
         if self.tile_amount > 0:
             self.tile_amount -= 1
-            
         x, y = coord
         grid[y][x] = self.terrain_types.Floor
         self.visible_tiles.add(coord)

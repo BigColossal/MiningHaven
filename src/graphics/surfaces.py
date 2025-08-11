@@ -258,28 +258,37 @@ class MinerSurface(GameSurface):
 
         color = (100, 100, 10)
         circle_size = int(gfx.TILE_SIZE / 2)
-        pg.draw.circle(surface, color, (circle_size, circle_size), circle_size - 15)
+        pg.draw.circle(surface, color, (circle_size, circle_size), circle_size - 25)
         return surface
     
-    def update_static(self, coord, id):
+    def update_pos(self, miners):
+        for miner in miners:
+            id, pos = miner.id, miner.pos
+            self.miner_positions[id] = pos
+
+    
+    def update_static(self, miners):
         """
         This function is strictly for moving miners across the screen, not for updating animations
         """
-        if id in self.miner_positions:
-            past_x, past_y = self.miner_positions[id]
-            self.static_surface.fill((0, 0, 0, 0), (past_x * gfx.TILE_SIZE, past_y * gfx.TILE_SIZE,
-                                                    gfx.TILE_SIZE, gfx.TILE_SIZE))
-                                                
+        for miner in miners:
+            id, coord = miner.id, miner.pos
+            if id in self.miner_positions:
+                past_x, past_y = self.miner_positions[id]
+                self.static_surface.fill((0, 0, 0, 0), (past_x * gfx.TILE_SIZE, past_y * gfx.TILE_SIZE,
+                                                        gfx.TILE_SIZE, gfx.TILE_SIZE))
+                                                    
 
-        x, y = coord
-        self.static_surface.blit(self.sprite, (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE))
+            x, y = coord
+            self.static_surface.blit(self.sprite, (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE))
 
 
     def load_new(self):
         self.create_static_surface()
         for miner in self.miners:
-            self.update_static(miner.pos, miner.id)
             self.miner_positions[miner.id] = miner.pos
+
+        self.update_static(self.miners)
 
 class ObjectSurface(GameSurface):
     def __init__(self):

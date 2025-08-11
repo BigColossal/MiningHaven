@@ -53,6 +53,8 @@ class EventHandler:
                 self.call_tile_broken([coord_broken])
 
     def call_tile_broken(self, coords, new_grid=None, initialization=False):
+        if isinstance(coords, tuple):
+            coords = [coords]
         pg.event.post(pg.event.Event(GameEvents.TILE_BROKEN.value, {'positions': coords, 'new_grid': new_grid,
                                                                     "initialization": initialization}))
         

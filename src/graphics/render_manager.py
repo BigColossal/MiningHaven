@@ -51,7 +51,16 @@ class RenderManager:
             else:
                 surface.load_new()
 
-
+    def check_miner_pos(self):
+        miners_changed = []
+        for miner in self._terrain._miners:
+            id = miner.id
+            if miner.pos != self._miner_surface.miner_positions[id]:
+                miners_changed.append(miner)
+        if miners_changed:
+            self._miner_surface.update_static(miners_changed)
+            self._miner_surface.update_pos(miners_changed)
+            self.dirty = True
 
 
     def fill(self, color): # fill background
