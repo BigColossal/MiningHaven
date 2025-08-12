@@ -8,6 +8,7 @@ class Terrain:
         self._surface: gfx.TerrainSurface = None
         self._outlines: gfx.OutlineSurface = None
         self._shadows: gfx.ShadowSurface = None
+        self._surrounding_shadows: gfx.SurroundingShadowSurface = None
         self._darkness: gfx.DarknessSurface = None
         self._miner_surface: gfx.MinerSurface = None
         self._object_surface: gfx.ObjectSurface = None
@@ -18,7 +19,7 @@ class Terrain:
 
         self._miners: list[Miner] = None
 
-        self.grid_size = 10
+        self.grid_size = 50
         self.middle = None
         self.visible_tiles = None
 
@@ -155,8 +156,9 @@ class Terrain:
     def set_outlines(self, outline_surface):
         self._outlines = outline_surface
 
-    def set_shadows(self, shadow_surface):
+    def set_shadows(self, shadow_surface, surrounding_shadow_surface):
         self._shadows = shadow_surface
+        self._surrounding_shadows = surrounding_shadow_surface
 
     def set_darkness(self, darkness_surface):
         self._darkness = darkness_surface

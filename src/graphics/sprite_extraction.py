@@ -2,11 +2,12 @@ import pygame as pg
 import src.graphics as gfx
 
 class GameSprites:
-    def __init__(self, terrain, shadows, outlines, objects):
+    def __init__(self, terrain, shadows, outlines, objects, surrounding_shadows):
         self.terrain_tileset = terrain
         self.shadow_tileset = shadows
         self.outlines_tileset = outlines
         self.object_tileset = objects
+        self.surrounding_shadows_tileset = surrounding_shadows
 
     def get_terrain_tile(self, terrain):
         terrain_name = terrain.name if hasattr(terrain, "name") else str(terrain)
@@ -23,6 +24,9 @@ class GameSprites:
     
     def get_object_tile(self, obj_name):
         return self.object_tileset.get(obj_name)
+    
+    def get_surrounding_shadow_tile(self, direction):
+        return self.surrounding_shadows_tileset.get(direction)
 
 
 def extract_sprites() -> GameSprites:
@@ -60,6 +64,17 @@ def extract_sprites() -> GameSprites:
         "Down": get_tile(shadow_sheet, TILE_SIZE, 1, 2)
     }
 
+    surrounding_shadows_tileset = {
+        "Up Left": pg.transform.smoothscale(get_tile(shadow_sheet, TILE_SIZE, 1, 1), (gfx.TILE_SIZE * 2, gfx.TILE_SIZE * 2)),
+        "Up Right": pg.transform.smoothscale(get_tile(shadow_sheet, TILE_SIZE, 0, 1), (gfx.TILE_SIZE * 2, gfx.TILE_SIZE * 2)),
+        "Down Left": pg.transform.smoothscale(get_tile(shadow_sheet, TILE_SIZE, 1, 0), (gfx.TILE_SIZE * 2, gfx.TILE_SIZE * 2)),
+        "Down Right": pg.transform.smoothscale(get_tile(shadow_sheet, TILE_SIZE, 0, 0), (gfx.TILE_SIZE * 2, gfx.TILE_SIZE * 2)),
+        "Right": pg.transform.smoothscale(get_tile(shadow_sheet, TILE_SIZE, 2, 0), (gfx.TILE_SIZE * 2, gfx.TILE_SIZE * 2)),
+        "Left": pg.transform.smoothscale(get_tile(shadow_sheet, TILE_SIZE, 2, 1), (gfx.TILE_SIZE * 2, gfx.TILE_SIZE * 2)),
+        "Up": pg.transform.smoothscale(get_tile(shadow_sheet, TILE_SIZE, 0, 2), (gfx.TILE_SIZE * 2, gfx.TILE_SIZE * 2)),
+        "Down": pg.transform.smoothscale(get_tile(shadow_sheet, TILE_SIZE, 1, 2), (gfx.TILE_SIZE * 2, gfx.TILE_SIZE * 2))
+    }
+
     outline_tileset = {
         "Down": get_tile(outline_sheet, TILE_SIZE, 1, 1),
         "Up": get_tile(outline_sheet, TILE_SIZE, 0, 1),
@@ -71,4 +86,4 @@ def extract_sprites() -> GameSprites:
         "Ladder": get_tile(object_sheet, TILE_SIZE, 0, 0)
     }
 
-    return GameSprites(terrain_tileset, shadow_tileset, outline_tileset, object_tileset)
+    return GameSprites(terrain_tileset, shadow_tileset, outline_tileset, object_tileset, surrounding_shadows_tileset)

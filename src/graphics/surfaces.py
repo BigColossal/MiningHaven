@@ -219,9 +219,86 @@ class ShadowSurface(GameSurface):
             self.static_surface.blit(neighbor_surf, (neigh_x * gfx.TILE_SIZE, neigh_y * gfx.TILE_SIZE))
 
 
-
     def load_new(self):
         self.create_static_surface()
+
+class SurroundingShadowSurface(GameSurface):
+    def __init__(self):
+        super().__init__()
+        self.shadow_tiles = 2  # Padding in tile units
+
+    def create_static_surface(self, size):
+        self.static_surface = pg.Surface((size, size), pg.SRCALPHA).convert_alpha()
+
+    def update_static(self, game_sprites: gfx.GameSprites, tile_coord: tuple[int, int], direction: str):
+        shadow_tile = game_sprites.get_surrounding_shadow_tile(direction)
+        x, y = tile_coord
+        tile_size = gfx.TILE_SIZE
+
+        # Convert tile coords to pixel coords
+        pixel_x = x * tile_size
+        pixel_y = y * tile_size
+
+        self.static_surface.blit(shadow_tile, (pixel_x, pixel_y))
+
+    def load_new(self, game_sprites: gfx.GameSprites):
+        grid_size = self._terrain.grid_size
+        tile_size = gfx.TILE_SIZE
+        padding = self.shadow_tiles
+
+        # Total surface size in pixels
+        padded_size = (grid_size + padding * 2) * tile_size
+        self.create_static_surface(padded_size)
+        pg.draw.rect(self.static_surface, (175, 220, 240), (
+            self.shadow_tiles * tile_size,
+            self.shadow_tiles * tile_size,
+            grid_size * tile_size,
+            grid_size * tile_size
+        ), 2)
+        # Shift the surface origin so (0,0) is at top-left of padded area
+        self.origin_offset = (-padding * tile_size, -padding * tile_size)
+
+        for y in range(-padding, grid_size + padding, 2):
+            for x in range(-padding, grid_size + padding, 2):
+                direction = None
+                if x < 0 and y < 0:
+                    direction = "Down Right"
+                elif x >= grid_size and y < 0:
+                    direction = "Down Left"
+                elif x < 0 and y >= grid_size:
+                    direction = "Up Right"
+                elif x >= grid_size and y >= grid_size:
+                    direction = "Up Left"
+                elif x < 0:
+                    direction = "Right"
+                elif x >= grid_size:
+                    direction = "Left"
+                elif y < 0:
+                    direction = "Down"
+                elif y >= grid_size:
+                    direction = "Up"
+
+                if direction:
+                    # Shift tile coords to match padded surface origin
+                    draw_x = x + padding
+                    draw_y = y + padding
+                    self.update_static(game_sprites, (draw_x, draw_y), direction)
+
+    def update_dynamic(self, offsets: tuple[float, float]):
+        self.off_x, self.off_y = offsets
+        visible_rect = pg.Rect(
+                self.off_x - self.origin_offset[0],
+                self.off_y - self.origin_offset[1],
+                gfx.SCREEN_WIDTH,
+                gfx.SCREEN_HEIGHT
+            )
+
+        # Calculate final blit position: shift by origin_offset, then counter camera movement
+
+        self.dynamic_surface.blit(self.static_surface, (0, 0), area=visible_rect)
+
+
+
 
 class DarknessSurface(GameSurface):
     def __init__(self):

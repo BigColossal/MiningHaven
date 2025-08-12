@@ -10,7 +10,7 @@ class TextHandler():
             self.font_cache[font_name] = pg.font.SysFont(font_name, size)
 
         font = self.font_cache[font_name]
-        text_surface = font.render(text, True, color)  # White text
+        text_surface = font.render(text, True, color)
         return text_surface
     
 

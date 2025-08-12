@@ -13,12 +13,13 @@ class RenderManager:
         self._terrain_surface: gfx.TerrainSurface = self._terrain._surface
         self._outline_surface: gfx.OutlineSurface = self._terrain._outlines
         self._shadow_surface: gfx.ShadowSurface = self._terrain._shadows
+        self._surrounding_shadow_surface: gfx.SurroundingShadowSurface = self._terrain._surrounding_shadows
         self._darkness_surface: gfx.DarknessSurface = self._terrain._darkness
         self._miner_surface: gfx.MinerSurface = self._terrain._miner_surface
         self._object_surface: gfx.ObjectSurface = self._terrain._object_surface
         self._healthbar_surface: gfx.HealthBarSurface = self._terrain._healthbar_surface
-        self.surfaces = [self._terrain_surface, self._object_surface, self._outline_surface, self._shadow_surface, 
-                         self._darkness_surface, self._miner_surface, self._healthbar_surface]
+        self.surfaces = [self._terrain_surface, self._object_surface, self._shadow_surface, self._outline_surface,
+                         self._darkness_surface, self._miner_surface, self._healthbar_surface, self._surrounding_shadow_surface]
 
         self.map_height, self.map_width = None, None
         self.offset_x, self.offset_y = None, None
@@ -52,8 +53,9 @@ class RenderManager:
     def load_new_cave(self): # for drawing brand new caves
         self._object_surface.set_objects()
         self._miner_surface.update_miner_amount()
+        surfaces_with_game_sprites = [self._terrain_surface, self._object_surface, self._surrounding_shadow_surface]
         for surface in self.surfaces:
-            if surface == self._terrain_surface or surface == self._object_surface:
+            if surface in surfaces_with_game_sprites:
                 surface.load_new(self._GAME_SPRITES)
             else:
                 surface.load_new()
@@ -76,17 +78,17 @@ class RenderManager:
 
     def render(self, dt, fps):
         self.set_FPS_counter(fps)
-        if self.dirty == True:
+        if self.dirty or self.darkening or self.lightening:
             self.fill(gfx.BG_COLOR)
 
             for surface in self.surfaces:
                 surface.update_dynamic((self.offset_x, self.offset_y))
 
+            self._screen.blit(self.fps_counter, (0, 0))
             if self.darkening:
                 self.darken_screen(dt)
             elif self.lightening:
                 self.lighten_screen(dt)
-            self._screen.blit(self.fps_counter, (0, 0))
             pg.display.flip()
         self.dirty = False
 
@@ -139,6 +141,7 @@ class RenderManager:
         self.dirty = True
 
     def darken_screen(self, dt):
+        self.dirty = True
         # Fade speed: pixels per second
         fade_rate = 300  # Increase for faster fade
         self.dark_alpha = min(self.dark_alpha + fade_rate * (dt), 255)
@@ -154,6 +157,7 @@ class RenderManager:
 
     def lighten_screen(self, dt):
         # Only start buffer when darkening stops
+        self.dirty = True
         if not hasattr(self, 'lighten_buffer_time'):
             self.lighten_buffer_time = 0
 
@@ -163,7 +167,6 @@ class RenderManager:
             fade_surface.fill((0, 0, 0))  # Full black during buffer
             self._screen.blit(fade_surface, (0, 0))
             return
-
         # Fade out begins after buffer
         fade_rate = 300
         self.dark_alpha = max(self.dark_alpha - fade_rate * (dt), 0)
