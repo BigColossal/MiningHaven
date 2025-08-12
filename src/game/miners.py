@@ -14,10 +14,10 @@ class Miner():
         self._path = None
         self._target = (None, None)
 
-        self.movement_speed = 2
-        self.mine_cd = 0.25
+        self.movement_speed = 3
+        self.mine_cd = 0.1
         self.cd_timer = self.mine_cd
-        self.damage = 50
+        self.damage = 2
 
     def spawn_miner(self):
         cave_mid = (self._terrain.middle, self._terrain.middle)
@@ -113,6 +113,7 @@ class Miner():
             destroyed = True
             if ore.health > 0:
                 destroyed = ore.take_damage(self.damage)
+                self._terrain.ores_damaged.add((self._target, (ore.health / ore.max_health) * 100))
             if destroyed:
                 self._path = [self._target]  # Move into the mined tile
                 self._state = "Moving"

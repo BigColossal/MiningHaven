@@ -12,6 +12,7 @@ class Terrain:
         self._miner_surface: gfx.MinerSurface = None
         self._object_surface: gfx.ObjectSurface = None
         self._event_handler: EventHandler = None
+        self._healthbar_surface: gfx.HealthBarSurface = None
 
         self.data = []
 
@@ -27,6 +28,7 @@ class Terrain:
         self.create_ore_chances()
         self.ore_base_healths = []
         self.create_ore_healths()
+        self.ores_damaged: set[tuple[tuple[int, int], float]] = set()
 
         self._ore_chances = {}
         self.ore_luck = 1
@@ -52,6 +54,9 @@ class Terrain:
         self._event_handler.call_tile_broken([(self.middle, self.middle)])
         self._cave_helper.generate_caves()
         self.spawn_miners()
+
+    def clear_ores_damaged(self):
+        self.ores_damaged = set()
 
     def restart_objects(self):
         self._objects = {}
@@ -167,6 +172,9 @@ class Terrain:
 
     def set_event_handler(self, event_handler):
         self._event_handler = event_handler
+
+    def set_healthbar_surface(self, healthbar_surface):
+        self._healthbar_surface = healthbar_surface
 
     def wipe_terrain_data(self):
         self.data = []

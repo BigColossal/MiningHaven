@@ -1,6 +1,6 @@
 from .render_manager import RenderManager
 from .sprite_extraction import extract_sprites, GameSprites
-from .surfaces import TerrainSurface, OutlineSurface, ShadowSurface, DarknessSurface, MinerSurface, ObjectSurface
+from .surfaces import TerrainSurface, OutlineSurface, ShadowSurface, DarknessSurface, MinerSurface, ObjectSurface, HealthBarSurface
 from .text import TextHandler
 
 SCREEN_WIDTH = 1920

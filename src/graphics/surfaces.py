@@ -305,3 +305,23 @@ class ObjectSurface(GameSurface):
         self.create_static_surface()
         for obj_name, obj in self.objects.items():
             self.update_static(obj, game_sprites)
+
+class HealthBarSurface(GameSurface):
+    def __init__(self):
+        super().__init__()
+        self.health_bar_rect = pg.Rect(0, 0, gfx.TILE_SIZE, gfx.TILE_SIZE / 4)
+        self.health_bars: dict[(int, int): pg.Surface] = {}
+
+    def update_static(self, coord, health_percent):
+        x, y = coord
+        if health_percent > 0:
+            pg.draw.rect(self.static_surface, (40, 40, 40), (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE, gfx.TILE_SIZE, 10))
+
+            # Fill (e.g., green) — scaled to health percentage
+            fill_width = int(gfx.TILE_SIZE * (health_percent / 100))
+            pg.draw.rect(self.static_surface, (0, 255, 0), (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE, fill_width, 10))
+        else:
+            self.static_surface.fill((0, 0, 0, 0), rect=(x * gfx.TILE_SIZE, y * gfx.TILE_SIZE, gfx.TILE_SIZE, 10))
+
+    def load_new(self):
+        self.create_static_surface()

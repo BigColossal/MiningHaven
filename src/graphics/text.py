@@ -1,5 +1,4 @@
 import pygame as pg
-from enum import Enum
 
 class TextHandler():
     def __init__(self):

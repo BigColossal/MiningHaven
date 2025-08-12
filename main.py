@@ -1,4 +1,4 @@
-from src.game import Terrain, terrainTypes, EventHandler, Miner
+from src.game import Terrain, EventHandler, Miner
 import src.graphics as gfx
 import pygame as pg
 
@@ -14,7 +14,8 @@ shadow_surface = gfx.ShadowSurface()
 darkness_surface = gfx.DarknessSurface()
 miner_surface = gfx.MinerSurface()
 object_surface = gfx.ObjectSurface()
-surfaces = [terrain_surface, outline_surface, shadow_surface, darkness_surface, miner_surface, object_surface]
+healthbar_surface = gfx.HealthBarSurface()
+surfaces = [terrain_surface, outline_surface, shadow_surface, darkness_surface, miner_surface, object_surface, healthbar_surface]
 miners = []
 miner_amount = 3
 for i in range(miner_amount):
@@ -27,6 +28,7 @@ terrain.set_darkness(darkness_surface)
 terrain.set_miner_surface(miner_surface)
 terrain.set_miners(miners)
 terrain.set_object_surface(object_surface)
+terrain.set_healthbar_surface(healthbar_surface)
 for surface in surfaces:
     surface.set_terrain(terrain)
 
@@ -80,7 +82,9 @@ def main():
                 graphics_engine.set_initial_offset()
                 graphics_engine.load_new_cave()
 
+        terrain.clear_ores_damaged()
         terrain.miner_decision_make(dt)
+        graphics_engine.update_healthbars()
         graphics_engine.check_miner_pos()
 
         graphics_engine.render(dt, fps)

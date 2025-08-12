@@ -16,8 +16,9 @@ class RenderManager:
         self._darkness_surface: gfx.DarknessSurface = self._terrain._darkness
         self._miner_surface: gfx.MinerSurface = self._terrain._miner_surface
         self._object_surface: gfx.ObjectSurface = self._terrain._object_surface
+        self._healthbar_surface: gfx.HealthBarSurface = self._terrain._healthbar_surface
         self.surfaces = [self._terrain_surface, self._object_surface, self._outline_surface, self._shadow_surface, 
-                         self._darkness_surface, self._miner_surface]
+                         self._darkness_surface, self._miner_surface, self._healthbar_surface]
 
         self.map_height, self.map_width = None, None
         self.offset_x, self.offset_y = None, None
@@ -105,6 +106,12 @@ class RenderManager:
             if (x >= 0 and x < self.grid_size) and (y >= 0 and y < self.grid_size):
                 self._terrain_surface.update_static(self._GAME_SPRITES, coord)
                 self._darkness_surface.update_static((x, y), darken=False)
+
+    def update_healthbars(self):
+        if self._terrain.ores_damaged:
+            self.dirty = True
+            for coord, health_percent in self._terrain.ores_damaged:
+                self._healthbar_surface.update_static(coord, health_percent)
 
     def move_camera(self, keys):
         move_x = 0
