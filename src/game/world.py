@@ -17,7 +17,7 @@ class Terrain:
 
         self._miners: list[Miner] = None
 
-        self.grid_size = 50
+        self.grid_size = 10
         self.middle = None
         self.visible_tiles = None
 
@@ -25,6 +25,8 @@ class Terrain:
         self._ore_appearance_rate = 30
         self.ore_base_chances = []
         self.create_ore_chances()
+        self.ore_base_healths = []
+        self.create_ore_healths()
 
         self._ore_chances = {}
         self.ore_luck = 1
@@ -40,11 +42,13 @@ class Terrain:
 
 
     def initialize_terrain(self):
+        from src.game import Ore
         self.visible_tiles = set()
         self.middle = self.grid_size // 2
         self.restart_objects()
         self.tile_amount = self.grid_size * self.grid_size
-        self.data = [[self.terrain_types.Stone for _ in range(self.grid_size)] for _ in range(self.grid_size)]
+        stone_health = self.get_ore_health(self.terrain_types.Stone)
+        self.data = [[Ore(self.terrain_types.Stone, stone_health, (x, y), self._event_handler) for x in range(self.grid_size)] for y in range(self.grid_size)]
         self._event_handler.call_tile_broken([(self.middle, self.middle)])
         self._cave_helper.generate_caves()
         self.spawn_miners()
@@ -57,9 +61,9 @@ class Terrain:
         for miner in self._miners:
             miner.spawn_miner()
 
-    def miner_decision_make(self):
+    def miner_decision_make(self, dt):
         for miner in self._miners:
-            miner.decision_make()
+            miner.decision_make(dt)
 
     def create_object(self, name, pos):
         from src.game import GameObject
@@ -85,7 +89,7 @@ class Terrain:
                 if coord not in self.visible_tiles:
                     # visible terrain construction
                     self.visible_tiles.add(coord)
-                    if self.data[new_y][new_x] != self.terrain_types.Floor:
+                    if self.data[new_y][new_x].type != self.terrain_types.Floor:
                         changeable_terrain.append(coord)
                 else:
                     continue
@@ -94,7 +98,7 @@ class Terrain:
     
     def handle_edge_map(self, direction: str, og_coord: tuple[int, int], new_coord: tuple[int, int]):
         new_x, new_y = new_coord
-        if self.data[new_y][new_x] != self.terrain_types.Floor:
+        if self.data[new_y][new_x].type != self.terrain_types.Floor:
             if og_coord in self.edge_map:
                 self.edge_map[og_coord].add(direction)
             else:
@@ -105,6 +109,7 @@ class Terrain:
             self.edge_map.get(new_coord, set()).discard(opposite_direction)
 
     def create_ores(self, coords: list[tuple[int, int]]):
+        from src.game import Ore
         """
         As ore will be created when theyre revealed, or adjacent to a floor tile and in other terms everything starts
         as stone but gets converted to ore as theyre exposed as the player can upgrade their ore luck mid game, this will
@@ -112,8 +117,9 @@ class Terrain:
         """
         for coord in coords:
             x, y = coord
-            ore_type = self.choose_ore_type()
-            self.data[y][x] = self.terrain_types(ore_type)
+            ore_type = self.terrain_types(self.choose_ore_type())
+            ore_health = self.get_ore_health(ore_type)
+            self.data[y][x] = Ore(ore_type, ore_health, coord, self._event_handler)
 
     def choose_ore_type(self, ) -> int:
         import random
@@ -166,6 +172,7 @@ class Terrain:
         self.data = []
 
     def break_terrain(self, coord: tuple[int, int], initialization: bool, imported_grid=None):
+        from src.game import Ore
         if imported_grid:
             grid = imported_grid
         else:
@@ -173,7 +180,7 @@ class Terrain:
         if self.tile_amount > 0:
             self.tile_amount -= 1
         x, y = coord
-        grid[y][x] = self.terrain_types.Floor
+        grid[y][x] = Ore(self.terrain_types.Floor, 0, (x, y), self._event_handler)
         self.visible_tiles.add(coord)
         self._cave_helper.check_if_in_cave((x, y))
 
@@ -220,6 +227,19 @@ class Terrain:
         normalized[1] = round(100 - self._ore_appearance_rate, 2)
 
         self._ore_chances = normalized
+
+    def create_ore_healths(self):
+        init_health = 5
+        change_rate = 5
+        healths = []
+        for i in range(self._ore_amount + 1): # + 1 because of stone
+            healths.append(round(init_health * (change_rate ** i), 1))
+
+        self.ore_base_healths = healths
+
+    def get_ore_health(self, type):
+        index = type.value - 1
+        return self.ore_base_healths[index]
 
     def check_if_cleared(self):
         if self.tile_amount == 0:

@@ -49,8 +49,8 @@ class EventHandler:
             from src.game import terrainTypes
 
             # Trigger tile break if it's not already walkable
-            if self.terrain.data[tile_y][tile_x] != terrainTypes.Floor:
-                self.call_tile_broken([coord_broken])
+            if self.terrain.data[tile_y][tile_x].type != terrainTypes.Floor:
+                self.terrain.data[tile_y][tile_x].take_damage(100)
 
     def call_tile_broken(self, coords, new_grid=None, initialization=False):
         if isinstance(coords, tuple):

@@ -26,10 +26,10 @@ class GameSprites:
 
 
 def extract_sprites() -> GameSprites:
-    ore_sheet = pg.image.load("assets/sprites/ore_sprite_sheet.png")
-    shadow_sheet = pg.image.load("assets/sprites/shadow_sprite_sheet.png")
-    outline_sheet = pg.image.load("assets/sprites/outline_sprite_sheet.png")
-    object_sheet = pg.image.load("assets/sprites/object_sprite_sheet.png")
+    ore_sheet = pg.image.load("assets/sprites/ore_sprite_sheet.png").convert_alpha()
+    shadow_sheet = pg.image.load("assets/sprites/shadow_sprite_sheet.png").convert_alpha()
+    outline_sheet = pg.image.load("assets/sprites/outline_sprite_sheet.png").convert_alpha()
+    object_sheet = pg.image.load("assets/sprites/object_sprite_sheet.png").convert_alpha()
 
     def get_tile(sheet, tile_size, x, y):
         width, height = tile_size, tile_size

@@ -30,6 +30,8 @@ class RenderManager:
         self.dark_alpha = 0
         self.lighten_buffer_duration = 1500
 
+        self.zoom = 1
+
     def set_renderer_to_surfaces(self):
         for surface in self.surfaces:
             surface.set_dynamic_screen(self._screen)
@@ -52,14 +54,15 @@ class RenderManager:
                 surface.load_new()
 
     def check_miner_pos(self):
-        miners_changed = []
+        miners_changed = False
         for miner in self._terrain._miners:
             id = miner.id
             if miner.pos != self._miner_surface.miner_positions[id]:
-                miners_changed.append(miner)
+                miners_changed = True
+                break
         if miners_changed:
-            self._miner_surface.update_static(miners_changed)
-            self._miner_surface.update_pos(miners_changed)
+            self._miner_surface.update_static()
+            self._miner_surface.update_pos()
             self.dirty = True
 
 
@@ -125,12 +128,12 @@ class RenderManager:
     def darken_screen(self, dt):
         # Fade speed: pixels per second
         fade_rate = 300  # Increase for faster fade
-        self.dark_alpha = min(self.dark_alpha + fade_rate * (dt / 1000), 255)
+        self.dark_alpha = min(self.dark_alpha + fade_rate * (dt), 255)
 
-        fade_surface = pg.Surface(self.__screen.get_size())
+        fade_surface = pg.Surface(self._screen.get_size())
         fade_surface.set_alpha(int(self.dark_alpha))
         fade_surface.fill((0, 0, 0))
-        self.__screen.blit(fade_surface, (0, 0))
+        self._screen.blit(fade_surface, (0, 0))
 
         if self.dark_alpha >= 255:
             self.darkening = False
@@ -142,24 +145,25 @@ class RenderManager:
             self.lighten_buffer_time = 0
 
         if self.lighten_buffer_time < self.lighten_buffer_duration:
-            self.lighten_buffer_time += dt
-            fade_surface = pg.Surface(self.__screen.get_size())
+            self.lighten_buffer_time += dt * 1000
+            fade_surface = pg.Surface(self._screen.get_size())
             fade_surface.fill((0, 0, 0))  # Full black during buffer
-            self.__screen.blit(fade_surface, (0, 0))
+            self._screen.blit(fade_surface, (0, 0))
             return
 
         # Fade out begins after buffer
         fade_rate = 300
-        self.dark_alpha = max(self.dark_alpha - fade_rate * (dt / 1000), 0)
+        self.dark_alpha = max(self.dark_alpha - fade_rate * (dt), 0)
 
-        fade_surface = pg.Surface(self.__screen.get_size())
+        fade_surface = pg.Surface(self._screen.get_size())
         fade_surface.set_alpha(int(self.dark_alpha))
         fade_surface.fill((0, 0, 0))
-        self.__screen.blit(fade_surface, (0, 0))
+        self._screen.blit(fade_surface, (0, 0))
 
         if self.dark_alpha <= 0:
             self.lightening = False
             self.lighten_buffer_time = 0  # Reset for future use
+
 
 
 

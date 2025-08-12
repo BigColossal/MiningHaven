@@ -2,6 +2,8 @@ from src.game import Terrain, terrainTypes, EventHandler, Miner
 import src.graphics as gfx
 import pygame as pg
 
+pg.init()
+
 # order in all creation is important
 terrain = Terrain()
 terrain_surface = gfx.TerrainSurface()
@@ -14,7 +16,7 @@ miner_surface = gfx.MinerSurface()
 object_surface = gfx.ObjectSurface()
 surfaces = [terrain_surface, outline_surface, shadow_surface, darkness_surface, miner_surface, object_surface]
 miners = []
-miner_amount = 1
+miner_amount = 3
 for i in range(miner_amount):
     miners.append(Miner(terrain))
 
@@ -39,7 +41,6 @@ terrain.initialize_terrain()
 graphics_engine.load_new_cave()
 
 def main():
-    pg.init()
     clock = pg.time.Clock()
     running = True
     dt = 0
@@ -76,11 +77,14 @@ def main():
                 graphics_engine.set_initial_offset()
                 graphics_engine.load_new_cave()
 
-        terrain.miner_decision_make()
+        terrain.miner_decision_make(dt)
         graphics_engine.check_miner_pos()
 
         graphics_engine.render(dt)
-        dt = clock.tick(FPS)
+        dt = clock.tick(FPS) / 1000
+        fps = clock.get_fps()
+        print(f"FPS: {fps:.2f}")
+
 
 
     pg.quit()

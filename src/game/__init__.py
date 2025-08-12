@@ -1,4 +1,4 @@
-from .ores import terrainTypes
+from .ores import terrainTypes, Ore
 from .world import Terrain
 from .events import EventHandler
 from .caves import CaveHelper
