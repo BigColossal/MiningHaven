@@ -30,11 +30,15 @@ class RenderManager:
         self.dark_alpha = 0
         self.lighten_buffer_duration = 1500
 
-        self.zoom = 1
+        self._text_handler: gfx.TextHandler = None
+        self.fps_counter = None
 
     def set_renderer_to_surfaces(self):
         for surface in self.surfaces:
             surface.set_dynamic_screen(self._screen)
+
+    def set_text_handler(self, text_handler):
+        self._text_handler = text_handler
 
     def set_map_dimensions(self):
         total_pixels = self.grid_size * gfx.TILE_SIZE
@@ -69,7 +73,8 @@ class RenderManager:
     def fill(self, color): # fill background
         self._screen.fill(color)
 
-    def render(self, dt):
+    def render(self, dt, fps):
+        self.set_FPS_counter(fps)
         if self.dirty == True:
             self.fill(gfx.BG_COLOR)
 
@@ -80,6 +85,7 @@ class RenderManager:
                 self.darken_screen(dt)
             elif self.lightening:
                 self.lighten_screen(dt)
+            self._screen.blit(self.fps_counter, (0, 0))
             pg.display.flip()
         self.dirty = False
 
@@ -164,7 +170,8 @@ class RenderManager:
             self.lightening = False
             self.lighten_buffer_time = 0  # Reset for future use
 
-
+    def set_FPS_counter(self, fps):
+        self.fps_counter = self._text_handler.create_text(f"{int(fps)}fps", "agentfb", 40, (120, 225, 120))
 
 
 

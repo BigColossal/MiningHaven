@@ -34,9 +34,11 @@ FPS = 60
 
 graphics_engine = gfx.RenderManager(terrain)
 events_handler = EventHandler(graphics_engine, terrain)
+text_handler = gfx.TextHandler()
 
 terrain.set_event_handler(events_handler)
 graphics_engine.set_renderer_to_surfaces()
+graphics_engine.set_text_handler(text_handler)
 terrain.initialize_terrain()
 graphics_engine.load_new_cave()
 
@@ -44,6 +46,7 @@ def main():
     clock = pg.time.Clock()
     running = True
     dt = 0
+    fps = 60
 
     while running:
         keys = pg.key.get_pressed()
@@ -80,10 +83,9 @@ def main():
         terrain.miner_decision_make(dt)
         graphics_engine.check_miner_pos()
 
-        graphics_engine.render(dt)
+        graphics_engine.render(dt, fps)
         dt = clock.tick(FPS) / 1000
         fps = clock.get_fps()
-        print(f"FPS: {fps:.2f}")
 
 
 
