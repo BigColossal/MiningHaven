@@ -65,6 +65,9 @@ class EventHandler:
     def call_darkening_screen(self):
         pg.event.post(pg.event.Event(GameEvents.SCREEN_DARKENING.value))
 
+    def call_lightening_screen(self):
+        pg.event.post(pg.event.Event(GameEvents.SCREEN_LIGHTENING.value))
+
     
 
 

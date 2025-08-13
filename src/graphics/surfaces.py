@@ -23,16 +23,20 @@ class GameSurface:
     def update_dynamic(self, offsets: tuple[float, float]): 
         # Update dynamic screen (used for refreshing the screen and for parts of gfx that are NOT static, like animations) 
         self.off_x, self.off_y = offsets 
-        visible_rect = pg.Rect(self.off_x, self.off_y, gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT)
-        self.dynamic_surface.blit(self.static_surface, (0, 0), area=visible_rect)
-
-
-
+        if not hasattr(self, "_visible_rect"):
+            self._visible_rect = pg.Rect(0, 0, gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT)
+        self._visible_rect.topleft = (self.off_x, self.off_y)
+        self.dynamic_surface.blit(self.static_surface, (0, 0), area=self._visible_rect)
 
 
 class TerrainSurface(GameSurface):
     def __init__(self):
         super().__init__()
+
+    def create_static_surface(self):
+        # Create new surface (static surfaces used for non moving tiles, such as terrain, shadows, outlines, UI, etc)
+        grid_pixels = self._terrain.grid_size * gfx.TILE_SIZE
+        self.static_surface = pg.Surface((grid_pixels, grid_pixels)).convert()
 
     def update_static(self, game_sprites: gfx.GameSprites, coord: tuple[int, int]):
         x, y = coord
@@ -51,6 +55,7 @@ class TerrainSurface(GameSurface):
 class OutlineSurface(GameSurface):
     def __init__(self):
         super().__init__()
+        self._tmp_tile = self._tmp_tile = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA)
 
     def update_static(self, game_sprites: gfx.GameSprites, coord: tuple[int, int]):
         x, y = coord
@@ -60,16 +65,18 @@ class OutlineSurface(GameSurface):
 
 
         def create_outline_surf(edge_directions):
-            direction_log = ["Up", "Right", "Down", "Left"]
-            outline_surface = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA)
+            direction_log = {"Up", "Right", "Down", "Left"}
+
+            self._tmp_tile.fill((0,0,0,0))  # reset
+
 
             for direction in edge_directions:
-                direction_log.remove(direction) # removes from list as it will be used to check which direction has no edge
+                direction_log.discard(direction) # removes from list as it will be used to check which direction has no edge
 
                 outline_tile = game_sprites.get_outline_tile(direction)
-                outline_surface.blit(outline_tile, (0, 0))
+                self._tmp_tile.blit(outline_tile, (0, 0))
 
-            return direction_log, outline_surface
+            return direction_log, self._tmp_tile
         
 
         floors_surrounding, outl_surf = create_outline_surf(directions)
@@ -100,6 +107,7 @@ class OutlineSurface(GameSurface):
 class ShadowSurface(GameSurface):
     def __init__(self):
         super().__init__()
+        self.padding = 2
 
 
     def update_static(self, game_sprites: gfx.GameSprites, coord: tuple[int, int]):
@@ -155,7 +163,7 @@ class ShadowSurface(GameSurface):
                     diagonal_data[name] = self._terrain.data[corner_y][corner_x]
 
             direction_log = ["Up", "Right", "Down", "Left"]
-            shadow_surface = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA)
+            shadow_surface = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA).convert_alpha()
 
             # Add shadow edges for missing directions
             for direction in edge_directions:
@@ -190,7 +198,7 @@ class ShadowSurface(GameSurface):
 
         # Main tile lighting update
         surrounding_floor, shadow_surf = create_shadow_surf(directions, coord)
-        self.static_surface.blit(shadow_surf, (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE))
+        self.static_surface.blit(shadow_surf, ((x + self.padding) * gfx.TILE_SIZE, (y + self.padding) * gfx.TILE_SIZE))
 
         # Coordinates of all cardinal and diagonal directions
         direction_coords = {
@@ -211,26 +219,14 @@ class ShadowSurface(GameSurface):
                 neighbor_directions = self._terrain.edge_map[neighbor_coord]
 
             # Clear existing shadow at neighbor tile
-            self.static_surface.fill((0, 0, 0, 0), (neigh_x * gfx.TILE_SIZE, neigh_y * gfx.TILE_SIZE,
+            self.static_surface.fill((0, 0, 0, 0), ((neigh_x + self.padding) * gfx.TILE_SIZE, (neigh_y + self.padding) * gfx.TILE_SIZE,
                                                 gfx.TILE_SIZE, gfx.TILE_SIZE))
 
             # Recreate lighting based on terrain conditions
             test_floor, neighbor_surf = create_shadow_surf(neighbor_directions, neighbor_coord)
-            self.static_surface.blit(neighbor_surf, (neigh_x * gfx.TILE_SIZE, neigh_y * gfx.TILE_SIZE))
+            self.static_surface.blit(neighbor_surf, ((neigh_x + self.padding) * gfx.TILE_SIZE, (neigh_y + self.padding) * gfx.TILE_SIZE))
 
-
-    def load_new(self):
-        self.create_static_surface()
-
-class SurroundingShadowSurface(GameSurface):
-    def __init__(self):
-        super().__init__()
-        self.shadow_tiles = 2  # Padding in tile units
-
-    def create_static_surface(self, size):
-        self.static_surface = pg.Surface((size, size), pg.SRCALPHA).convert_alpha()
-
-    def update_static(self, game_sprites: gfx.GameSprites, tile_coord: tuple[int, int], direction: str):
+    def add_surrounding_shadow(self, game_sprites: gfx.GameSprites, tile_coord: tuple[int, int], direction: str):
         shadow_tile = game_sprites.get_surrounding_shadow_tile(direction)
         x, y = tile_coord
         tile_size = gfx.TILE_SIZE
@@ -244,17 +240,11 @@ class SurroundingShadowSurface(GameSurface):
     def load_new(self, game_sprites: gfx.GameSprites):
         grid_size = self._terrain.grid_size
         tile_size = gfx.TILE_SIZE
-        padding = self.shadow_tiles
+        padding = self.padding
 
-        # Total surface size in pixels
         padded_size = (grid_size + padding * 2) * tile_size
         self.create_static_surface(padded_size)
-        pg.draw.rect(self.static_surface, (175, 220, 240), (
-            self.shadow_tiles * tile_size,
-            self.shadow_tiles * tile_size,
-            grid_size * tile_size,
-            grid_size * tile_size
-        ), 2)
+
         # Shift the surface origin so (0,0) is at top-left of padded area
         self.origin_offset = (-padding * tile_size, -padding * tile_size)
 
@@ -282,34 +272,29 @@ class SurroundingShadowSurface(GameSurface):
                     # Shift tile coords to match padded surface origin
                     draw_x = x + padding
                     draw_y = y + padding
-                    self.update_static(game_sprites, (draw_x, draw_y), direction)
+                    self.add_surrounding_shadow(game_sprites, (draw_x, draw_y), direction)
+
+    def create_static_surface(self, size):
+        self.static_surface = pg.Surface((size, size), pg.SRCALPHA).convert_alpha()
 
     def update_dynamic(self, offsets: tuple[float, float]):
         self.off_x, self.off_y = offsets
-        visible_rect = pg.Rect(
-                self.off_x - self.origin_offset[0],
-                self.off_y - self.origin_offset[1],
-                gfx.SCREEN_WIDTH,
-                gfx.SCREEN_HEIGHT
-            )
-
-        # Calculate final blit position: shift by origin_offset, then counter camera movement
-
-        self.dynamic_surface.blit(self.static_surface, (0, 0), area=visible_rect)
-
-
-
+        if not hasattr(self, "_visible_rect"):
+            self._visible_rect = pg.Rect(0, 0, gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT)
+        self._visible_rect.topleft = (self.off_x - self.origin_offset[0], self.off_y - self.origin_offset[1])
+        
+        self.dynamic_surface.blit(self.static_surface, (0, 0), area=self._visible_rect)
 
 class DarknessSurface(GameSurface):
     def __init__(self):
         super().__init__()
+        self.dark_tile = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA)
+        self.dark_tile.fill((1, 1, 1, 255))
 
     def update_static(self, coord, darken=True):
         x, y = coord
         if darken:
-            darkness_tile = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA)
-            darkness_tile.fill((1, 1, 1))
-            self.static_surface.blit(darkness_tile, (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE))
+            self.static_surface.blit(self.dark_tile, (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE))
         else:
             self.static_surface.fill((0, 0, 0, 0), (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE,
                                                 gfx.TILE_SIZE, gfx.TILE_SIZE))
@@ -347,14 +332,18 @@ class MinerSurface(GameSurface):
 
     
     def update_static(self):
-        """
-        This function is strictly for moving miners across the screen, not for updating animations
-        """
-        self.static_surface.fill((0, 0, 0, 0))
-        for miner in self.miners:
-            coord = miner.pos
+        """Only redraws changed miner positions."""
+        dirty_rects = []
 
-            x, y = coord
+        for miner in self.miners:
+            old_x, old_y = self.miner_positions[miner.id]
+            dirty_rects.append(pg.Rect(old_x * gfx.TILE_SIZE, old_y * gfx.TILE_SIZE, gfx.TILE_SIZE, gfx.TILE_SIZE))
+
+        for rect in dirty_rects:
+            self.static_surface.fill((0, 0, 0, 0), rect)
+
+        for miner in self.miners:
+            x, y = miner.pos
             self.static_surface.blit(self.sprite, (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE))
 
 
@@ -380,6 +369,12 @@ class ObjectSurface(GameSurface):
 
     def load_new(self, game_sprites: gfx.GameSprites):
         self.create_static_surface()
+        pg.draw.rect(self.static_surface, (175, 220, 240), (
+            0,
+            0,
+            self._terrain.grid_size * gfx.TILE_SIZE,
+            self._terrain.grid_size * gfx.TILE_SIZE
+        ), 2)
         for obj_name, obj in self.objects.items():
             self.update_static(obj, game_sprites)
 
