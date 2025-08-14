@@ -5,7 +5,6 @@ class Terrain:
         import src.graphics as gfx
         from src.game import EventHandler, CaveHelper, Miner
 
-        self._surface: gfx.TerrainSurface = None
         self._outline_shadows: gfx.OutlineShadowSurface = None
         self._miner_surface: gfx.MinerSurface = None
         self._object_surface: gfx.ObjectSurface = None
@@ -16,7 +15,7 @@ class Terrain:
 
         self._miners: list[Miner] = None
 
-        self.grid_size = 10
+        self.grid_size = 50
         self.middle = None
         self.visible_tiles = None
 
@@ -146,9 +145,6 @@ class Terrain:
 
     def update_luck(self):
         self.ore_luck += 1
-
-    def set_surface(self, terrain_surface):
-        self._surface = terrain_surface
 
     def set_outline_shadows(self, outline_shadow_surface):
         self._outline_shadows = outline_shadow_surface

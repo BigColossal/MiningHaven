@@ -7,20 +7,18 @@ pg.init()
 
 # order in all creation is important
 terrain = Terrain()
-terrain_surface = gfx.TerrainSurface()
 
 
 outline_shadow_surface = gfx.OutlineShadowSurface()
 miner_surface = gfx.MinerSurface()
 object_surface = gfx.ObjectSurface()
 healthbar_surface = gfx.HealthBarSurface()
-surfaces = [terrain_surface, outline_shadow_surface, miner_surface, object_surface, healthbar_surface]
+surfaces = [outline_shadow_surface, miner_surface, object_surface, healthbar_surface]
 miners = []
 miner_amount = 3
 for i in range(miner_amount):
     miners.append(Miner(terrain))
 
-terrain.set_surface(terrain_surface)
 terrain.set_outline_shadows(outline_shadow_surface)
 terrain.set_miner_surface(miner_surface)
 terrain.set_miners(miners)
@@ -31,11 +29,9 @@ for surface in surfaces:
 
 graphics_engine = gfx.RenderManager(terrain)
 events_handler = EventHandler(graphics_engine, terrain)
-text_handler = gfx.TextHandler()
 
 terrain.set_event_handler(events_handler)
 graphics_engine.set_renderer_to_surfaces()
-graphics_engine.set_text_handler(text_handler)
 terrain.initialize_terrain()
 graphics_engine.load_new_cave()
 

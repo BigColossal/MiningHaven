@@ -43,7 +43,6 @@ class TerrainSurface(GameSurface):
                     self.update_static(game_sprites, (x, y))
 
 
-
 class OutlineShadowSurface(GameSurface):
     def __init__(self):
         super().__init__()
@@ -52,7 +51,7 @@ class OutlineShadowSurface(GameSurface):
         self.dark_tile = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA)
         self.dark_tile.fill((1, 1, 1, 255))
 
-    def update_static(self, game_sprites: gfx.GameSprites, coord: tuple[int, int]):
+    def update_tile_edges(self, game_sprites: gfx.GameSprites, coord: tuple[int, int]):
         x, y = coord
         directions = []
         if coord in self._terrain.edge_map:
@@ -81,13 +80,18 @@ class OutlineShadowSurface(GameSurface):
             self.static_surface.fill((0, 0, 0, 0), ((neigh_x + self.padding) * gfx.TILE_SIZE, (neigh_y + self.padding) * gfx.TILE_SIZE, 
                                               gfx.TILE_SIZE, gfx.TILE_SIZE)) # clear out neighbor tile as to update the outlines there
             
+            self.update_terrain_tile(game_sprites, neighbor_floor_pos)
+            
             _, neighbor_surf = self.create_shadow_surf(game_sprites, neighbor_directions, neighbor_floor_pos)
             self.static_surface.blit(neighbor_surf, ((neigh_x + self.padding) * gfx.TILE_SIZE, (neigh_y + self.padding) * gfx.TILE_SIZE))
             if neighbor_directions:
                 neighbor_surf = self.create_outline_surf(game_sprites, neighbor_directions)
                 self.static_surface.blit(neighbor_surf, ((neigh_x + self.padding) * gfx.TILE_SIZE, (neigh_y + self.padding) * gfx.TILE_SIZE))
-        
 
+    def update_terrain_tile(self, game_sprites: gfx.GameSprites, coord: tuple[int, int]):
+        x, y = coord
+        tile = game_sprites.get_terrain_tile(self._terrain.data[y][x].type)
+        self.static_surface.blit(tile, ((x + self.padding) * gfx.TILE_SIZE, (y + self.padding) * gfx.TILE_SIZE))
 
     def create_outline_surf(self, game_sprites: gfx.GameSprites, edge_directions):
             direction_log = {"Up", "Right", "Down", "Left"}
@@ -229,6 +233,8 @@ class OutlineShadowSurface(GameSurface):
             for x in range(self._terrain.grid_size):
                 if (x, y) not in self._terrain.visible_tiles:
                     self.update_darkness((x, y))
+                else:
+                    self.update_terrain_tile(game_sprites, (x, y))
 
     def create_static_surface(self, size):
         self.static_surface = pg.Surface((size, size), pg.SRCALPHA).convert_alpha()
