@@ -13,12 +13,11 @@ class RenderManager:
         self.grid_size = self._terrain.grid_size
         self._terrain_surface: gfx.TerrainSurface = self._terrain._surface
         self._outline_shadow_surface: gfx.OutlineShadowSurface = self._terrain._outline_shadows
-        self._darkness_surface: gfx.DarknessSurface = self._terrain._darkness
         self._miner_surface: gfx.MinerSurface = self._terrain._miner_surface
         self._object_surface: gfx.ObjectSurface = self._terrain._object_surface
         self._healthbar_surface: gfx.HealthBarSurface = self._terrain._healthbar_surface
         self.surfaces = [self._terrain_surface, self._object_surface, self._outline_shadow_surface,
-                         self._darkness_surface, self._miner_surface, self._healthbar_surface]
+                         self._miner_surface, self._healthbar_surface]
 
         self.map_height, self.map_width = None, None
         self.offset_x, self.offset_y = None, None
@@ -41,6 +40,7 @@ class RenderManager:
 
         self._visible_rect = pg.Rect(0, 0, gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT)
         self._shadow_visible_rect = pg.Rect(0, 0, gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT)
+        self._visible_terrain = set()
 
     def set_renderer_to_surfaces(self):
         for surface in self.surfaces:
@@ -92,7 +92,6 @@ class RenderManager:
             surfaces = [(self._terrain_surface.static_surface, (0, 0), self._visible_rect),
                         (self._object_surface.static_surface, (0, 0), self._visible_rect),
                         (self._outline_shadow_surface.static_surface, (0, 0), self._shadow_visible_rect),
-                        (self._darkness_surface.static_surface, (0, 0), self._visible_rect),
                         (self._miner_surface.static_surface, (0, 0), self._visible_rect),
                         (self._healthbar_surface.static_surface, (0, 0), self._visible_rect)]
 
@@ -114,13 +113,15 @@ class RenderManager:
                             (x - 1, y - 1), (x - 1, y + 1), (x + 1, y + 1), (x + 1, y -1)]
         
         self._terrain_surface.update_static(self._GAME_SPRITES, coord)
-        self._darkness_surface.update_static((x, y), darken=False)
+        self._outline_shadow_surface.update_darkness((x, y), darken=False)
         self._outline_shadow_surface.update_static(self._GAME_SPRITES, coord)
         for coord in coords_to_check:
             x, y = coord
             if (x >= 0 and x < self.grid_size) and (y >= 0 and y < self.grid_size):
-                self._terrain_surface.update_static(self._GAME_SPRITES, coord)
-                self._darkness_surface.update_static((x, y), darken=False)
+                type = self._terrain.data[y][x].type
+                if type != self._terrain.terrain_types.Floor:
+                    self._terrain_surface.update_static(self._GAME_SPRITES, coord)
+                    self._outline_shadow_surface.update_darkness((x, y), darken=False)
 
     def update_visible_rects(self):
         self._visible_rect.topleft = (self.offset_x, self.offset_y)

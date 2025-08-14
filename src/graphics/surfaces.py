@@ -49,6 +49,8 @@ class OutlineShadowSurface(GameSurface):
         super().__init__()
         self._tmp_tile = self._tmp_tile = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA)
         self.padding = 2
+        self.dark_tile = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA)
+        self.dark_tile.fill((1, 1, 1, 255))
 
     def update_static(self, game_sprites: gfx.GameSprites, coord: tuple[int, int]):
         x, y = coord
@@ -177,6 +179,15 @@ class OutlineShadowSurface(GameSurface):
 
         self.static_surface.blit(shadow_tile, (pixel_x, pixel_y))
 
+    def update_darkness(self, coord, darken=True):
+        x, y = coord
+        if darken:
+            self.static_surface.blit(self.dark_tile, ((x + self.padding) * gfx.TILE_SIZE, (y + self.padding) * gfx.TILE_SIZE))
+        else:
+            self.static_surface.fill((0, 0, 0, 0), ((x + self.padding) * gfx.TILE_SIZE, (y + self.padding) * gfx.TILE_SIZE,
+                                                gfx.TILE_SIZE, gfx.TILE_SIZE))
+
+
     def load_new(self, game_sprites: gfx.GameSprites):
         grid_size = self._terrain.grid_size
         tile_size = gfx.TILE_SIZE
@@ -214,29 +225,13 @@ class OutlineShadowSurface(GameSurface):
                     draw_y = y + padding
                     self.add_surrounding_shadow(game_sprites, (draw_x, draw_y), direction)
 
-    def create_static_surface(self, size):
-        self.static_surface = pg.Surface((size, size), pg.SRCALPHA).convert_alpha()
-
-class DarknessSurface(GameSurface):
-    def __init__(self):
-        super().__init__()
-        self.dark_tile = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA)
-        self.dark_tile.fill((1, 1, 1, 255))
-
-    def update_static(self, coord, darken=True):
-        x, y = coord
-        if darken:
-            self.static_surface.blit(self.dark_tile, (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE))
-        else:
-            self.static_surface.fill((0, 0, 0, 0), (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE,
-                                                gfx.TILE_SIZE, gfx.TILE_SIZE))
-
-    def load_new(self):
-        self.create_static_surface()
         for y in range(self._terrain.grid_size):
             for x in range(self._terrain.grid_size):
                 if (x, y) not in self._terrain.visible_tiles:
-                    self.update_static((x, y))
+                    self.update_darkness((x, y))
+
+    def create_static_surface(self, size):
+        self.static_surface = pg.Surface((size, size), pg.SRCALPHA).convert_alpha()
 
 class MinerSurface(GameSurface):
     def __init__(self):
