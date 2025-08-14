@@ -5,6 +5,7 @@ from src.game import Terrain
 class RenderManager:
     def __init__(self, terrain: Terrain):
         self._screen = pg.display.set_mode((gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT))
+        self._dynamic_screen = pg.Surface((gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT))
         pg.display.set_caption("Mining Mayhem")
 
         self._GAME_SPRITES = gfx.extract_sprites()
@@ -33,6 +34,14 @@ class RenderManager:
 
         self._text_handler: gfx.TextHandler = None
         self.fps_counter = None
+        self._last_fps = 0
+
+        self.MIN_OFFSET = -gfx.TILE_SIZE * gfx.PADDING
+        self.MAX_OFFSET_Y = self.map_height - gfx.SCREEN_HEIGHT + (gfx.PADDING * gfx.TILE_SIZE)
+        self.MAX_OFFSET_X = self.map_width - gfx.SCREEN_WIDTH + (gfx.PADDING * gfx.TILE_SIZE)
+
+        self._visible_rect = pg.Rect(0, 0, gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT)
+        self._shadow_visible_rect = pg.Rect(0, 0, gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT)
 
     def set_renderer_to_surfaces(self):
         for surface in self.surfaces:
@@ -73,21 +82,29 @@ class RenderManager:
 
 
     def fill(self, color): # fill background
-        self._screen.fill(color)
+        self._dynamic_screen.fill(color)
 
     def render(self, dt, fps):
-        self.set_FPS_counter(fps)
         if self.dirty or self.darkening or self.lightening:
+            self.set_FPS_counter(fps)
             self.fill(gfx.BG_COLOR)
 
-            for surface in self.surfaces:
-                surface.update_dynamic((self.offset_x, self.offset_y))
+            self.update_visible_rects()
+            surfaces = [(self._terrain_surface.static_surface, (0, 0), self._visible_rect),
+                        (self._object_surface.static_surface, (0, 0), self._visible_rect),
+                        (self._shadow_surface.static_surface, (0, 0), self._shadow_visible_rect),
+                        (self._outline_surface.static_surface, (0, 0), self._visible_rect),
+                        (self._darkness_surface.static_surface, (0, 0), self._visible_rect),
+                        (self._miner_surface.static_surface, (0, 0), self._visible_rect),
+                        (self._healthbar_surface.static_surface, (0, 0), self._visible_rect)]
 
-            self._screen.blit(self.fps_counter, (0, 0))
+            self._dynamic_screen.blits(surfaces)
+            self._dynamic_screen.blit(self.fps_counter, (0, 0))
             if self.darkening:
                 self.darken_screen(dt)
             elif self.lightening:
                 self.lighten_screen(dt)
+            self._screen.blit(self._dynamic_screen, (0, 0))
             pg.display.flip()
         self.dirty = False
 
@@ -107,6 +124,11 @@ class RenderManager:
             if (x >= 0 and x < self.grid_size) and (y >= 0 and y < self.grid_size):
                 self._terrain_surface.update_static(self._GAME_SPRITES, coord)
                 self._darkness_surface.update_static((x, y), darken=False)
+
+    def update_visible_rects(self):
+        self._visible_rect.topleft = (self.offset_x, self.offset_y)
+
+        self._shadow_visible_rect.topleft = (self.offset_x - gfx.SHADOW_OFFSET[0], self.offset_y - gfx.SHADOW_OFFSET[1])
 
     def update_healthbars(self):
         if self._terrain.ores_damaged:
@@ -135,8 +157,10 @@ class RenderManager:
 
         self.offset_x += int(move_x * norm)
         self.offset_y += int(move_y * norm)
-        
 
+        self.offset_x = max(self.MIN_OFFSET, min(self.offset_x, self.MAX_OFFSET_X))
+        self.offset_y = max(self.MIN_OFFSET, min(self.offset_y, self.MAX_OFFSET_Y))
+        
         self.dirty = True
 
     def darken_screen(self, dt):
@@ -148,7 +172,7 @@ class RenderManager:
         fade_surface = pg.Surface(self._screen.get_size())
         fade_surface.set_alpha(int(self.dark_alpha))
         fade_surface.fill((0, 0, 0))
-        self._screen.blit(fade_surface, (0, 0))
+        self._dynamic_screen.blit(fade_surface, (0, 0))
 
         if self.dark_alpha >= 255:
             self.darkening = False
@@ -165,7 +189,7 @@ class RenderManager:
             fade_surface = pg.Surface(self._screen.get_size())
             self.dark_alpha = 255
             fade_surface.fill((0, 0, 0))  # Full black during buffer
-            self._screen.blit(fade_surface, (0, 0))
+            self._dynamic_screen.blit(fade_surface, (0, 0))
             return
         # Fade out begins after buffer
         fade_rate = 300
@@ -174,14 +198,19 @@ class RenderManager:
         fade_surface = pg.Surface(self._screen.get_size())
         fade_surface.set_alpha(int(self.dark_alpha))
         fade_surface.fill((0, 0, 0))
-        self._screen.blit(fade_surface, (0, 0))
+        self._dynamic_screen.blit(fade_surface, (0, 0))
 
         if self.dark_alpha <= 0:
             self.lightening = False
             self.lighten_buffer_time = 0  # Reset for future use
 
     def set_FPS_counter(self, fps):
-        self.fps_counter = self._text_handler.create_text(f"{int(fps)}fps", "agentfb", 40, (120, 225, 120))
+        fps_int = int(fps)
+        if fps_int != self._last_fps:
+            self._last_fps = fps_int
+            font = self._text_handler.get_font("ubuntu", 40)
+            self.fps_counter = font.render(f"{fps_int}fps", True, (120, 225, 120))
+
 
 
 

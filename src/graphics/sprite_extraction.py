@@ -41,6 +41,7 @@ def extract_sprites(use_smooth_for_surrounding=False) -> GameSprites:
     _subsurface = lambda s, r: s.subsurface(r).copy()  # copy so returned surface is independent
     _scale = pg.transform.scale
     _smoothscale = pg.transform.smoothscale
+    _convert = lambda surf: surf.convert()
     _convert_alpha = lambda surf: surf.convert_alpha()
 
     SRC_TILE = 128

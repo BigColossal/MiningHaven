@@ -20,14 +20,6 @@ class GameSurface:
         grid_pixels = self._terrain.grid_size * gfx.TILE_SIZE
         self.static_surface = pg.Surface((grid_pixels, grid_pixels), pg.SRCALPHA).convert_alpha()
 
-    def update_dynamic(self, offsets: tuple[float, float]): 
-        # Update dynamic screen (used for refreshing the screen and for parts of gfx that are NOT static, like animations) 
-        self.off_x, self.off_y = offsets 
-        if not hasattr(self, "_visible_rect"):
-            self._visible_rect = pg.Rect(0, 0, gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT)
-        self._visible_rect.topleft = (self.off_x, self.off_y)
-        self.dynamic_surface.blit(self.static_surface, (0, 0), area=self._visible_rect)
-
 
 class TerrainSurface(GameSurface):
     def __init__(self):
@@ -276,14 +268,6 @@ class ShadowSurface(GameSurface):
 
     def create_static_surface(self, size):
         self.static_surface = pg.Surface((size, size), pg.SRCALPHA).convert_alpha()
-
-    def update_dynamic(self, offsets: tuple[float, float]):
-        self.off_x, self.off_y = offsets
-        if not hasattr(self, "_visible_rect"):
-            self._visible_rect = pg.Rect(0, 0, gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT)
-        self._visible_rect.topleft = (self.off_x - self.origin_offset[0], self.off_y - self.origin_offset[1])
-        
-        self.dynamic_surface.blit(self.static_surface, (0, 0), area=self._visible_rect)
 
 class DarknessSurface(GameSurface):
     def __init__(self):

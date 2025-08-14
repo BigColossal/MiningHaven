@@ -1,6 +1,7 @@
 from src.game import Terrain, EventHandler, Miner
 import src.graphics as gfx
 import pygame as pg
+import math
 
 pg.init()
 
@@ -31,8 +32,6 @@ terrain.set_object_surface(object_surface)
 terrain.set_healthbar_surface(healthbar_surface)
 for surface in surfaces:
     surface.set_terrain(terrain)
-
-FPS = 60
 
 graphics_engine = gfx.RenderManager(terrain)
 events_handler = EventHandler(graphics_engine, terrain)
@@ -88,8 +87,11 @@ def main():
         graphics_engine.check_miner_pos()
 
         graphics_engine.render(dt, fps)
-        dt = clock.tick(FPS) / 1000
+        dt = clock.tick(gfx.FPS) / 1000
         fps = clock.get_fps()
+        if math.isinf(fps) or math.isnan(fps):
+            fps = 0
+
 
 
 
