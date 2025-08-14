@@ -10,21 +10,19 @@ terrain = Terrain()
 terrain_surface = gfx.TerrainSurface()
 
 
-outline_surface = gfx.OutlineSurface()
-shadow_surface = gfx.ShadowSurface()
+outline_shadow_surface = gfx.OutlineShadowSurface()
 darkness_surface = gfx.DarknessSurface()
 miner_surface = gfx.MinerSurface()
 object_surface = gfx.ObjectSurface()
 healthbar_surface = gfx.HealthBarSurface()
-surfaces = [terrain_surface, outline_surface, shadow_surface, darkness_surface, miner_surface, object_surface, healthbar_surface]
+surfaces = [terrain_surface, outline_shadow_surface, darkness_surface, miner_surface, object_surface, healthbar_surface]
 miners = []
 miner_amount = 3
 for i in range(miner_amount):
     miners.append(Miner(terrain))
 
 terrain.set_surface(terrain_surface)
-terrain.set_outlines(outline_surface)
-terrain.set_shadows(shadow_surface)
+terrain.set_outline_shadows(outline_shadow_surface)
 terrain.set_darkness(darkness_surface)
 terrain.set_miner_surface(miner_surface)
 terrain.set_miners(miners)

@@ -12,13 +12,12 @@ class RenderManager:
         self._terrain = terrain
         self.grid_size = self._terrain.grid_size
         self._terrain_surface: gfx.TerrainSurface = self._terrain._surface
-        self._outline_surface: gfx.OutlineSurface = self._terrain._outlines
-        self._shadow_surface: gfx.ShadowSurface = self._terrain._shadows
+        self._outline_shadow_surface: gfx.OutlineShadowSurface = self._terrain._outline_shadows
         self._darkness_surface: gfx.DarknessSurface = self._terrain._darkness
         self._miner_surface: gfx.MinerSurface = self._terrain._miner_surface
         self._object_surface: gfx.ObjectSurface = self._terrain._object_surface
         self._healthbar_surface: gfx.HealthBarSurface = self._terrain._healthbar_surface
-        self.surfaces = [self._terrain_surface, self._object_surface, self._shadow_surface, self._outline_surface,
+        self.surfaces = [self._terrain_surface, self._object_surface, self._outline_shadow_surface,
                          self._darkness_surface, self._miner_surface, self._healthbar_surface]
 
         self.map_height, self.map_width = None, None
@@ -61,7 +60,7 @@ class RenderManager:
     def load_new_cave(self): # for drawing brand new caves
         self._object_surface.set_objects()
         self._miner_surface.update_miner_amount()
-        surfaces_with_game_sprites = [self._terrain_surface, self._object_surface, self._shadow_surface]
+        surfaces_with_game_sprites = [self._terrain_surface, self._object_surface, self._outline_shadow_surface]
         for surface in self.surfaces:
             if surface in surfaces_with_game_sprites:
                 surface.load_new(self._GAME_SPRITES)
@@ -92,8 +91,7 @@ class RenderManager:
             self.update_visible_rects()
             surfaces = [(self._terrain_surface.static_surface, (0, 0), self._visible_rect),
                         (self._object_surface.static_surface, (0, 0), self._visible_rect),
-                        (self._shadow_surface.static_surface, (0, 0), self._shadow_visible_rect),
-                        (self._outline_surface.static_surface, (0, 0), self._visible_rect),
+                        (self._outline_shadow_surface.static_surface, (0, 0), self._shadow_visible_rect),
                         (self._darkness_surface.static_surface, (0, 0), self._visible_rect),
                         (self._miner_surface.static_surface, (0, 0), self._visible_rect),
                         (self._healthbar_surface.static_surface, (0, 0), self._visible_rect)]
@@ -117,8 +115,7 @@ class RenderManager:
         
         self._terrain_surface.update_static(self._GAME_SPRITES, coord)
         self._darkness_surface.update_static((x, y), darken=False)
-        self._outline_surface.update_static(self._GAME_SPRITES, coord)
-        self._shadow_surface.update_static(self._GAME_SPRITES, coord)
+        self._outline_shadow_surface.update_static(self._GAME_SPRITES, coord)
         for coord in coords_to_check:
             x, y = coord
             if (x >= 0 and x < self.grid_size) and (y >= 0 and y < self.grid_size):

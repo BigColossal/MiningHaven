@@ -44,10 +44,11 @@ class TerrainSurface(GameSurface):
 
 
 
-class OutlineSurface(GameSurface):
+class OutlineShadowSurface(GameSurface):
     def __init__(self):
         super().__init__()
         self._tmp_tile = self._tmp_tile = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA)
+        self.padding = 2
 
     def update_static(self, game_sprites: gfx.GameSprites, coord: tuple[int, int]):
         x, y = coord
@@ -55,8 +56,38 @@ class OutlineSurface(GameSurface):
         if coord in self._terrain.edge_map:
             directions = self._terrain.edge_map[coord]
 
+        surrounding_floor, shadow_surf = self.create_shadow_surf(game_sprites, directions, coord)
+        self.static_surface.blit(shadow_surf, ((x + self.padding) * gfx.TILE_SIZE, (y + self.padding) * gfx.TILE_SIZE))
 
-        def create_outline_surf(edge_directions):
+        outl_surf = self.create_outline_surf(game_sprites, directions)
+        self.static_surface.blit(outl_surf, ((x + self.padding) * gfx.TILE_SIZE, (y + self.padding) * gfx.TILE_SIZE))
+
+        direction_coords = {
+            "Up": (x, y - 1), "Down": (x, y + 1),
+            "Right": (x + 1, y), "Left": (x - 1, y),
+            "Up Right": (x + 1, y - 1), "Up Left": (x - 1, y - 1),
+            "Down Right": (x + 1, y + 1), "Down Left": (x - 1, y + 1)
+        }
+        for direction in surrounding_floor: # for all adjacent tiles that are floor
+            neighbor_floor_pos = direction_coords[direction]
+            neigh_x, neigh_y = neighbor_floor_pos
+
+            neighbor_directions = None
+            if neighbor_floor_pos in self._terrain.edge_map:
+                neighbor_directions = self._terrain.edge_map[neighbor_floor_pos]
+
+            self.static_surface.fill((0, 0, 0, 0), ((neigh_x + self.padding) * gfx.TILE_SIZE, (neigh_y + self.padding) * gfx.TILE_SIZE, 
+                                              gfx.TILE_SIZE, gfx.TILE_SIZE)) # clear out neighbor tile as to update the outlines there
+            
+            _, neighbor_surf = self.create_shadow_surf(game_sprites, neighbor_directions, neighbor_floor_pos)
+            self.static_surface.blit(neighbor_surf, ((neigh_x + self.padding) * gfx.TILE_SIZE, (neigh_y + self.padding) * gfx.TILE_SIZE))
+            if neighbor_directions:
+                neighbor_surf = self.create_outline_surf(game_sprites, neighbor_directions)
+                self.static_surface.blit(neighbor_surf, ((neigh_x + self.padding) * gfx.TILE_SIZE, (neigh_y + self.padding) * gfx.TILE_SIZE))
+        
+
+
+    def create_outline_surf(self, game_sprites: gfx.GameSprites, edge_directions):
             direction_log = {"Up", "Right", "Down", "Left"}
 
             self._tmp_tile.fill((0,0,0,0))  # reset
@@ -68,63 +99,9 @@ class OutlineSurface(GameSurface):
                 outline_tile = game_sprites.get_outline_tile(direction)
                 self._tmp_tile.blit(outline_tile, (0, 0))
 
-            return direction_log, self._tmp_tile
-        
-
-        floors_surrounding, outl_surf = create_outline_surf(directions)
-        self.static_surface.blit(outl_surf, (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE))
-
-        direction_coords = {"Up": (x, y - 1), "Down": (x, y + 1), "Right": (x + 1, y), "Left": (x - 1, y)}
-        for direction in floors_surrounding: # for all adjacent tiles that are floor
-            neighbor_floor_pos = direction_coords[direction]
-            neigh_x, neigh_y = neighbor_floor_pos
-
-            neighbor_directions = None
-            if neighbor_floor_pos in self._terrain.edge_map:
-                neighbor_directions = self._terrain.edge_map[neighbor_floor_pos]
-
-            self.static_surface.fill((0, 0, 0, 0), (neigh_x * gfx.TILE_SIZE, neigh_y * gfx.TILE_SIZE, 
-                                              gfx.TILE_SIZE, gfx.TILE_SIZE)) # clear out neighbor tile as to update the outlines there
-
-            if neighbor_directions:
-                _, neighbor_surf = create_outline_surf(neighbor_directions)
-                self.static_surface.blit(neighbor_surf, (neigh_x * gfx.TILE_SIZE, neigh_y * gfx.TILE_SIZE))
-            
-
-    def load_new(self):
-        self.create_static_surface()
-
-
-
-class ShadowSurface(GameSurface):
-    def __init__(self):
-        super().__init__()
-        self.padding = 2
-
-
-    def update_static(self, game_sprites: gfx.GameSprites, coord: tuple[int, int]):
-        """
-        Updates the static lighting layer at a given tile coordinate by:
-        1. Drawing directional and corner shadows based on terrain edges and diagonal neighbors.
-        2. Refreshing neighboring tiles to reflect any visual lighting changes triggered by the update.
-        
-        Args:
-            game_sprites (gfx.GameSprites): Container with lighting/shadow sprite assets.
-            coord (tuple[int, int]): Tile coordinate (x, y) to update.
-        
-        Notes:
-            - Diagonal corner shadows are rendered based on surrounding terrainTypes.Floor, 
-            even if no edge data exists for a tile.
-            - Neighbor tiles are proactively cleared and re-rendered to preserve lighting consistency.
-        """
-        x, y = coord
-        directions = []
-        
-        # Get directional edge data if available
-        if coord in self._terrain.edge_map:
-            directions = self._terrain.edge_map[coord]
-
-        def create_shadow_surf(edge_directions, coord):
+            return self._tmp_tile.copy()
+    
+    def create_shadow_surf(self, game_sprites: gfx.GameSprites, edge_directions, coord):
             """
             Composes the shadow surface for a tile based on directional edges and floor-type corners.
 
@@ -158,10 +135,11 @@ class ShadowSurface(GameSurface):
             shadow_surface = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA).convert_alpha()
 
             # Add shadow edges for missing directions
-            for direction in edge_directions:
-                direction_log.remove(direction)
-                shadow_tile = game_sprites.get_shadow_tile(direction)
-                shadow_surface.blit(shadow_tile, (0, 0))
+            if edge_directions:
+                for direction in edge_directions:
+                    direction_log.remove(direction)
+                    shadow_tile = game_sprites.get_shadow_tile(direction)
+                    shadow_surface.blit(shadow_tile, (0, 0))
 
             valid_directions = []
             for direction in direction_log:
@@ -187,36 +165,6 @@ class ShadowSurface(GameSurface):
                         shadow_surface.blit(corner_shadow_tile, (0, 0))
 
             return surrounding_floor, shadow_surface
-
-        # Main tile lighting update
-        surrounding_floor, shadow_surf = create_shadow_surf(directions, coord)
-        self.static_surface.blit(shadow_surf, ((x + self.padding) * gfx.TILE_SIZE, (y + self.padding) * gfx.TILE_SIZE))
-
-        # Coordinates of all cardinal and diagonal directions
-        direction_coords = {
-            "Up": (x, y - 1), "Down": (x, y + 1),
-            "Right": (x + 1, y), "Left": (x - 1, y),
-            "Up Right": (x + 1, y - 1), "Up Left": (x - 1, y - 1),
-            "Down Right": (x + 1, y + 1), "Down Left": (x - 1, y + 1)
-        }
-
-        # Neighbor lighting pass (ripple update)
-        for floor_direction in surrounding_floor:
-            neighbor_coord = direction_coords[floor_direction]
-            neigh_x, neigh_y = neighbor_coord
-
-            # Get edge data or default to empty
-            neighbor_directions = []
-            if neighbor_coord in self._terrain.edge_map:
-                neighbor_directions = self._terrain.edge_map[neighbor_coord]
-
-            # Clear existing shadow at neighbor tile
-            self.static_surface.fill((0, 0, 0, 0), ((neigh_x + self.padding) * gfx.TILE_SIZE, (neigh_y + self.padding) * gfx.TILE_SIZE,
-                                                gfx.TILE_SIZE, gfx.TILE_SIZE))
-
-            # Recreate lighting based on terrain conditions
-            test_floor, neighbor_surf = create_shadow_surf(neighbor_directions, neighbor_coord)
-            self.static_surface.blit(neighbor_surf, ((neigh_x + self.padding) * gfx.TILE_SIZE, (neigh_y + self.padding) * gfx.TILE_SIZE))
 
     def add_surrounding_shadow(self, game_sprites: gfx.GameSprites, tile_coord: tuple[int, int], direction: str):
         shadow_tile = game_sprites.get_surrounding_shadow_tile(direction)

@@ -6,8 +6,7 @@ class Terrain:
         from src.game import EventHandler, CaveHelper, Miner
 
         self._surface: gfx.TerrainSurface = None
-        self._outlines: gfx.OutlineSurface = None
-        self._shadows: gfx.ShadowSurface = None
+        self._outline_shadows: gfx.OutlineShadowSurface = None
         self._darkness: gfx.DarknessSurface = None
         self._miner_surface: gfx.MinerSurface = None
         self._object_surface: gfx.ObjectSurface = None
@@ -18,7 +17,7 @@ class Terrain:
 
         self._miners: list[Miner] = None
 
-        self.grid_size = 10
+        self.grid_size = 50
         self.middle = None
         self.visible_tiles = None
 
@@ -152,11 +151,8 @@ class Terrain:
     def set_surface(self, terrain_surface):
         self._surface = terrain_surface
 
-    def set_outlines(self, outline_surface):
-        self._outlines = outline_surface
-
-    def set_shadows(self, shadow_surface):
-        self._shadows = shadow_surface
+    def set_outline_shadows(self, outline_shadow_surface):
+        self._outline_shadows = outline_shadow_surface
 
     def set_darkness(self, darkness_surface):
         self._darkness = darkness_surface
