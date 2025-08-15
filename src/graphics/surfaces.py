@@ -20,34 +20,11 @@ class GameSurface:
         grid_pixels = self._terrain.grid_size * gfx.TILE_SIZE
         self.static_surface = pg.Surface((grid_pixels, grid_pixels), pg.SRCALPHA).convert_alpha()
 
-
-class TerrainSurface(GameSurface):
-    def __init__(self):
-        super().__init__()
-
-    def create_static_surface(self):
-        # Create new surface (static surfaces used for non moving tiles, such as terrain, shadows, outlines, UI, etc)
-        grid_pixels = self._terrain.grid_size * gfx.TILE_SIZE
-        self.static_surface = pg.Surface((grid_pixels, grid_pixels)).convert()
-
-    def update_static(self, game_sprites: gfx.GameSprites, coord: tuple[int, int]):
-        x, y = coord
-        tile = game_sprites.get_terrain_tile(self._terrain.data[y][x].type)
-        self.static_surface.blit(tile, (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE))
-
-    def load_new(self, game_sprites: gfx.GameSprites):
-        self.create_static_surface()
-        for y in range(self._terrain.grid_size):
-            for x in range(self._terrain.grid_size):
-                if (x, y) in self._terrain.visible_tiles:
-                    self.update_static(game_sprites, (x, y))
-
-
 class OutlineShadowSurface(GameSurface):
     def __init__(self):
         super().__init__()
         self._tmp_tile = self._tmp_tile = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA)
-        self.padding = 2
+        self.padding = gfx.SHADOW_PADDING
         self.dark_tile = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA)
         self.dark_tile.fill((1, 1, 1, 255))
 
@@ -236,6 +213,13 @@ class OutlineShadowSurface(GameSurface):
                 else:
                     self.update_terrain_tile(game_sprites, (x, y))
 
+        pg.draw.rect(self.static_surface, (175, 220, 240), (
+            -2 + (self.padding * gfx.TILE_SIZE),
+            -2 + (self.padding * gfx.TILE_SIZE),
+            (self._terrain.grid_size * gfx.TILE_SIZE) + 4,
+            (self._terrain.grid_size * gfx.TILE_SIZE) + 4
+        ), 2)
+
     def create_static_surface(self, size):
         self.static_surface = pg.Surface((size, size), pg.SRCALPHA).convert_alpha()
 
@@ -302,12 +286,6 @@ class ObjectSurface(GameSurface):
 
     def load_new(self, game_sprites: gfx.GameSprites):
         self.create_static_surface()
-        pg.draw.rect(self.static_surface, (175, 220, 240), (
-            0,
-            0,
-            self._terrain.grid_size * gfx.TILE_SIZE,
-            self._terrain.grid_size * gfx.TILE_SIZE
-        ), 2)
         for obj_name, obj in self.objects.items():
             self.update_static(obj, game_sprites)
 

@@ -42,7 +42,7 @@ class CaveHelper:
         cave_amount = 0
 
         # Determine number of caves based on grid size.
-        if 50 >= self.grid_size >= 20:
+        if 100 >= self.grid_size >= 20:
             cave_amount = round((self.grid_size - 10) // 2)
 
         if cave_amount != 0:

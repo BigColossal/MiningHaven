@@ -15,7 +15,7 @@ object_surface = gfx.ObjectSurface()
 healthbar_surface = gfx.HealthBarSurface()
 surfaces = [outline_shadow_surface, miner_surface, object_surface, healthbar_surface]
 miners = []
-miner_amount = 3
+miner_amount = 50
 for i in range(miner_amount):
     miners.append(Miner(terrain))
 

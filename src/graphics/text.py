@@ -13,7 +13,7 @@ class TextHandler():
 
 class FPSCounter():
     def __init__(self, text_handler: TextHandler, dynamic_screen):
-        self.update_cd = 0.5
+        self.update_cd = 1.0
         self.cd_time = self.update_cd
         self._last_fps = 0
         self._text_handler = text_handler
