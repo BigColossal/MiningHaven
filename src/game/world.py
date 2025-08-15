@@ -8,13 +8,12 @@ class Terrain:
         self._cave_surface: gfx.CaveSurface = None
         self._miner_surface: gfx.MinerSurface = None
         self._event_handler: EventHandler = None
-        self._healthbar_surface: gfx.HealthBarSurface = None
 
         self.data = []
 
         self._miners: list[Miner] = None
 
-        self.grid_size = 10
+        self.grid_size = 26
         self.middle = None
         self.visible_tiles = None
 
@@ -156,9 +155,6 @@ class Terrain:
 
     def set_event_handler(self, event_handler):
         self._event_handler = event_handler
-
-    def set_healthbar_surface(self, healthbar_surface):
-        self._healthbar_surface = healthbar_surface
 
     def wipe_terrain_data(self):
         self.data = []

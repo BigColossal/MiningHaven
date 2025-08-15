@@ -30,6 +30,7 @@ class CaveSurface(GameSurface):
 
         from src.game import GameObject
         self.objects: dict[tuple[int, int]: GameObject] = {}
+        self.ores_damaged: set[tuple[int, int]] = set()
 
     def set_objects(self):
         self.objects = self._terrain._objects
@@ -185,6 +186,17 @@ class CaveSurface(GameSurface):
             else:
                 pass
 
+    def update_ore_health(self, coord, health_percent):
+        x, y = coord
+        if health_percent > 0:
+            self.ores_damaged.add(coord)
+            pg.draw.rect(self.static_surface, (40, 40, 40), ((x + self.padding) * gfx.TILE_SIZE, (y + self.padding) * gfx.TILE_SIZE, gfx.TILE_SIZE, 10))
+
+            # Fill (e.g., green) — scaled to health percentage
+            fill_width = int(gfx.TILE_SIZE * (health_percent / 100))
+            pg.draw.rect(self.static_surface, (0, 255, 0), ((x + self.padding) * gfx.TILE_SIZE, (y + self.padding) * gfx.TILE_SIZE, fill_width, 10))
+        else:
+            self.ores_damaged.discard(coord)
 
     def load_new(self, game_sprites: gfx.GameSprites):
         grid_size = self._terrain.grid_size

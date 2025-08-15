@@ -13,8 +13,7 @@ class RenderManager:
         self.grid_size = self._terrain.grid_size
         self._cave_surface: gfx.CaveSurface = self._terrain._cave_surface
         self._miner_surface: gfx.MinerSurface = self._terrain._miner_surface
-        self._healthbar_surface: gfx.HealthBarSurface = self._terrain._healthbar_surface
-        self.surfaces = [self._cave_surface, self._miner_surface, self._healthbar_surface]
+        self.surfaces = [self._cave_surface, self._miner_surface]
 
         self.map_height, self.map_width = None, None
         self.offset_x, self.offset_y = None, None
@@ -83,8 +82,7 @@ class RenderManager:
 
             self.update_visible_rects()
             surfaces = [(self._cave_surface.static_surface, (0, 0), self._shadow_visible_rect),
-                        (self._miner_surface.static_surface, (0, 0), self._visible_rect),
-                        (self._healthbar_surface.static_surface, (0, 0), self._visible_rect)]
+                        (self._miner_surface.static_surface, (0, 0), self._visible_rect)]
             
             self._screen.blits(surfaces)
             if self.fps_counter.fps_counter:
@@ -111,7 +109,7 @@ class RenderManager:
             x, y = coord
             if (x >= 0 and x < self.grid_size) and (y >= 0 and y < self.grid_size):
                 type = self._terrain.data[y][x].type
-                if type != self._terrain.terrain_types.Floor:
+                if type != self._terrain.terrain_types.Floor and coord not in self._cave_surface.ores_damaged:
                     self._cave_surface.update_darkness((x, y), darken=False)
                     self._cave_surface.update_terrain_tile(self._GAME_SPRITES, coord)
 
@@ -124,7 +122,7 @@ class RenderManager:
         if self._terrain.ores_damaged:
             self.dirty = True
             for coord, health_percent in self._terrain.ores_damaged:
-                self._healthbar_surface.update_static(coord, health_percent)
+                self._cave_surface.update_ore_health(coord, health_percent)
 
     def move_camera(self, keys):
         move_x = 0
