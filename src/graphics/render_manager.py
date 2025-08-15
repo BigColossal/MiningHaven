@@ -5,18 +5,16 @@ from src.game import Terrain
 class RenderManager:
     def __init__(self, terrain: Terrain):
         self._screen = pg.display.set_mode((gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT))
-        self._dynamic_screen = pg.Surface((gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT))
+        #self._dynamic_screen = pg.Surface((gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT))
         pg.display.set_caption("Mining Mayhem")
 
         self._GAME_SPRITES = gfx.extract_sprites()
         self._terrain = terrain
         self.grid_size = self._terrain.grid_size
-        self._outline_shadow_surface: gfx.OutlineShadowSurface = self._terrain._outline_shadows
+        self._cave_surface: gfx.CaveSurface = self._terrain._cave_surface
         self._miner_surface: gfx.MinerSurface = self._terrain._miner_surface
-        self._object_surface: gfx.ObjectSurface = self._terrain._object_surface
         self._healthbar_surface: gfx.HealthBarSurface = self._terrain._healthbar_surface
-        self.surfaces = [self._outline_shadow_surface, self._object_surface, 
-                         self._miner_surface, self._healthbar_surface]
+        self.surfaces = [self._cave_surface, self._miner_surface, self._healthbar_surface]
 
         self.map_height, self.map_width = None, None
         self.offset_x, self.offset_y = None, None
@@ -30,7 +28,7 @@ class RenderManager:
         self.lighten_buffer_duration = 1500
 
         self._text_handler: gfx.TextHandler = gfx.TextHandler()
-        self.fps_counter = gfx.FPSCounter(self._text_handler, self._dynamic_screen)
+        self.fps_counter = gfx.FPSCounter(self._text_handler, self._screen)
 
         self.MIN_OFFSET = -gfx.TILE_SIZE * gfx.PADDING
         self.MAX_OFFSET_Y = self.map_height - gfx.SCREEN_HEIGHT + (gfx.PADDING * gfx.TILE_SIZE)
@@ -53,9 +51,9 @@ class RenderManager:
         self.offset_y = -(gfx.SCREEN_HEIGHT - self.map_height) // 2
 
     def load_new_cave(self): # for drawing brand new caves
-        self._object_surface.set_objects()
+        self._cave_surface.set_objects()
         self._miner_surface.update_miner_amount()
-        surfaces_with_game_sprites = [self._object_surface, self._outline_shadow_surface]
+        surfaces_with_game_sprites = [self._cave_surface]
         for surface in self.surfaces:
             if surface in surfaces_with_game_sprites:
                 surface.load_new(self._GAME_SPRITES)
@@ -76,7 +74,7 @@ class RenderManager:
 
 
     def fill(self, color): # fill background
-        self._dynamic_screen.fill(color)
+        self._screen.fill(color)
 
     def render(self, dt, fps):
         if self.dirty or self.darkening or self.lightening:
@@ -84,19 +82,17 @@ class RenderManager:
             self.fill(gfx.BG_COLOR)
 
             self.update_visible_rects()
-            surfaces = [(self._outline_shadow_surface.static_surface, (0, 0), self._shadow_visible_rect),
-                        (self._object_surface.static_surface, (0, 0), self._visible_rect),
+            surfaces = [(self._cave_surface.static_surface, (0, 0), self._shadow_visible_rect),
                         (self._miner_surface.static_surface, (0, 0), self._visible_rect),
                         (self._healthbar_surface.static_surface, (0, 0), self._visible_rect)]
             
-            self._dynamic_screen.blits(surfaces)
+            self._screen.blits(surfaces)
             if self.fps_counter.fps_counter:
                 self.fps_counter.render()
             if self.darkening:
                 self.darken_screen(dt)
             elif self.lightening:
                 self.lighten_screen(dt)
-            self._screen.blit(self._dynamic_screen, (0, 0))
             pg.display.flip()
         self.dirty = False
 
@@ -107,16 +103,17 @@ class RenderManager:
         coords_to_check = [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1), 
                             (x - 1, y - 1), (x - 1, y + 1), (x + 1, y + 1), (x + 1, y -1)]
         
-        self._outline_shadow_surface.update_darkness((x, y), darken=False)
-        self._outline_shadow_surface.update_terrain_tile(self._GAME_SPRITES, coord)
-        self._outline_shadow_surface.update_tile_edges(self._GAME_SPRITES, coord)
+        self._cave_surface.update_darkness((x, y), darken=False)
+        self._cave_surface.update_terrain_tile(self._GAME_SPRITES, coord)
+        self._cave_surface.update_object(coord, self._GAME_SPRITES)
+        self._cave_surface.update_tile_edges(self._GAME_SPRITES, coord)
         for coord in coords_to_check:
             x, y = coord
             if (x >= 0 and x < self.grid_size) and (y >= 0 and y < self.grid_size):
                 type = self._terrain.data[y][x].type
                 if type != self._terrain.terrain_types.Floor:
-                    self._outline_shadow_surface.update_darkness((x, y), darken=False)
-                    self._outline_shadow_surface.update_terrain_tile(self._GAME_SPRITES, coord)
+                    self._cave_surface.update_darkness((x, y), darken=False)
+                    self._cave_surface.update_terrain_tile(self._GAME_SPRITES, coord)
 
     def update_visible_rects(self):
         self._visible_rect.topleft = (self.offset_x, self.offset_y)
@@ -165,7 +162,7 @@ class RenderManager:
         fade_surface = pg.Surface(self._screen.get_size())
         fade_surface.set_alpha(int(self.dark_alpha))
         fade_surface.fill((0, 0, 0))
-        self._dynamic_screen.blit(fade_surface, (0, 0))
+        self._screen.blit(fade_surface, (0, 0))
 
         if self.dark_alpha >= 255:
             self.darkening = False
@@ -182,7 +179,7 @@ class RenderManager:
             fade_surface = pg.Surface(self._screen.get_size())
             self.dark_alpha = 255
             fade_surface.fill((0, 0, 0))  # Full black during buffer
-            self._dynamic_screen.blit(fade_surface, (0, 0))
+            self._screen.blit(fade_surface, (0, 0))
             return
         # Fade out begins after buffer
         fade_rate = 300
@@ -191,7 +188,7 @@ class RenderManager:
         fade_surface = pg.Surface(self._screen.get_size())
         fade_surface.set_alpha(int(self.dark_alpha))
         fade_surface.fill((0, 0, 0))
-        self._dynamic_screen.blit(fade_surface, (0, 0))
+        self._screen.blit(fade_surface, (0, 0))
 
         if self.dark_alpha <= 0:
             self.lightening = False

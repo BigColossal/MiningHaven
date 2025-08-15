@@ -14,10 +14,10 @@ class Miner():
         self._path = None
         self._target = (None, None)
 
-        self.movement_speed = 2
-        self.mine_cd = 0.5
+        self.movement_speed = 10
+        self.mine_cd = 0.075
         self.cd_timer = self.mine_cd
-        self.damage = 5
+        self.damage = 35
 
     def spawn_miner(self):
         cave_mid = (self._terrain.middle, self._terrain.middle)

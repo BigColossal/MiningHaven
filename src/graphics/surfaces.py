@@ -20,13 +20,19 @@ class GameSurface:
         grid_pixels = self._terrain.grid_size * gfx.TILE_SIZE
         self.static_surface = pg.Surface((grid_pixels, grid_pixels), pg.SRCALPHA).convert_alpha()
 
-class OutlineShadowSurface(GameSurface):
+class CaveSurface(GameSurface):
     def __init__(self):
         super().__init__()
         self._tmp_tile = self._tmp_tile = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA)
         self.padding = gfx.SHADOW_PADDING
         self.dark_tile = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA)
         self.dark_tile.fill((1, 1, 1, 255))
+
+        from src.game import GameObject
+        self.objects: dict[tuple[int, int]: GameObject] = {}
+
+    def set_objects(self):
+        self.objects = self._terrain._objects
 
     def update_tile_edges(self, game_sprites: gfx.GameSprites, coord: tuple[int, int]):
         x, y = coord
@@ -58,6 +64,7 @@ class OutlineShadowSurface(GameSurface):
                                               gfx.TILE_SIZE, gfx.TILE_SIZE)) # clear out neighbor tile as to update the outlines there
             
             self.update_terrain_tile(game_sprites, neighbor_floor_pos)
+            self.update_object(neighbor_floor_pos, game_sprites)
             
             _, neighbor_surf = self.create_shadow_surf(game_sprites, neighbor_directions, neighbor_floor_pos)
             self.static_surface.blit(neighbor_surf, ((neigh_x + self.padding) * gfx.TILE_SIZE, (neigh_y + self.padding) * gfx.TILE_SIZE))
@@ -167,6 +174,16 @@ class OutlineShadowSurface(GameSurface):
         else:
             self.static_surface.fill((0, 0, 0, 0), ((x + self.padding) * gfx.TILE_SIZE, (y + self.padding) * gfx.TILE_SIZE,
                                                 gfx.TILE_SIZE, gfx.TILE_SIZE))
+            
+    def update_object(self, coord, game_sprites: gfx.GameSprites):
+        if coord in self.objects:
+            x, y = coord
+            obj = self.objects[coord]
+            if obj.on_floor:
+                obj_sprite = game_sprites.get_object_tile(obj.name)
+                self.static_surface.blit(obj_sprite, ((x + self.padding) * gfx.TILE_SIZE, (y + self.padding) * gfx.TILE_SIZE))
+            else:
+                pass
 
 
     def load_new(self, game_sprites: gfx.GameSprites):
@@ -270,24 +287,6 @@ class MinerSurface(GameSurface):
             self.miner_positions[miner.id] = miner.pos
 
         self.update_static()
-
-class ObjectSurface(GameSurface):
-    def __init__(self):
-        super().__init__()
-        self.objects: dict = {}
-
-    def set_objects(self):
-        self.objects = self._terrain._objects
-
-    def update_static(self, obj, game_sprites: gfx.GameSprites):
-        x, y = obj.pos
-        obj_sprite = game_sprites.get_object_tile(obj.name)
-        self.static_surface.blit(obj_sprite, (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE))
-
-    def load_new(self, game_sprites: gfx.GameSprites):
-        self.create_static_surface()
-        for obj_name, obj in self.objects.items():
-            self.update_static(obj, game_sprites)
 
 class HealthBarSurface(GameSurface):
     def __init__(self):

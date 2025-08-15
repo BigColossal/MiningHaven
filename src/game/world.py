@@ -5,9 +5,8 @@ class Terrain:
         import src.graphics as gfx
         from src.game import EventHandler, CaveHelper, Miner
 
-        self._outline_shadows: gfx.OutlineShadowSurface = None
+        self._cave_surface: gfx.CaveSurface = None
         self._miner_surface: gfx.MinerSurface = None
-        self._object_surface: gfx.ObjectSurface = None
         self._event_handler: EventHandler = None
         self._healthbar_surface: gfx.HealthBarSurface = None
 
@@ -15,7 +14,7 @@ class Terrain:
 
         self._miners: list[Miner] = None
 
-        self.grid_size = 100
+        self.grid_size = 10
         self.middle = None
         self.visible_tiles = None
 
@@ -57,7 +56,7 @@ class Terrain:
 
     def restart_objects(self):
         self._objects = {}
-        self.create_object("Ladder", (self.middle, self.middle))
+        self.create_object("Ladder", (self.middle, self.middle), on_floor=True)
     
     def spawn_miners(self):
         for miner in self._miners:
@@ -67,10 +66,10 @@ class Terrain:
         for miner in self._miners:
             miner.decision_make(dt)
 
-    def create_object(self, name, pos):
+    def create_object(self, name, pos, on_floor):
         from src.game import GameObject
-        obj = GameObject(name, pos)
-        self._objects[name] = obj
+        obj = GameObject(name, pos, on_floor)
+        self._objects[pos] = obj
         
 
     def check_surroundings(self, og_coord: tuple[int, int]):
@@ -146,17 +145,14 @@ class Terrain:
     def update_luck(self):
         self.ore_luck += 1
 
-    def set_outline_shadows(self, outline_shadow_surface):
-        self._outline_shadows = outline_shadow_surface
+    def set_cave_surface(self, cave_surface):
+        self._cave_surface = cave_surface
 
     def set_miners(self, miners):
         self._miners = miners
 
     def set_miner_surface(self, miner_surface):
         self._miner_surface = miner_surface
-
-    def set_object_surface(self, obj_surface):
-        self._object_surface = obj_surface
 
     def set_event_handler(self, event_handler):
         self._event_handler = event_handler

@@ -1,6 +1,6 @@
 from .render_manager import RenderManager
 from .sprite_extraction import extract_sprites, GameSprites
-from .surfaces import OutlineShadowSurface, MinerSurface, ObjectSurface, HealthBarSurface
+from .surfaces import CaveSurface, MinerSurface, HealthBarSurface
 from .text import TextHandler, FPSCounter
 
 SCREEN_WIDTH = 1920
