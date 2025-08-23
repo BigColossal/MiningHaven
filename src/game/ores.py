@@ -26,4 +26,3 @@ class Ore:
             self.event_handler.call_tile_broken(self.pos)
             return True
         return False
-

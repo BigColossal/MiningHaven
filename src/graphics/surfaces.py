@@ -300,22 +300,67 @@ class MinerSurface(GameSurface):
 
         self.update_static()
 
-class HealthBarSurface(GameSurface):
+class UISurface(GameSurface):
     def __init__(self):
         super().__init__()
-        self.health_bar_rect = pg.Rect(0, 0, gfx.TILE_SIZE, gfx.TILE_SIZE / 4)
-        self.health_bars: dict[(int, int): pg.Surface] = {}
+        self.buttons = {}
+        self.updatable_text = {}
+        self.nonupdatable_text = {}
+        self.text_fonts = gfx.TextHandler()
+        self.update_cd = 0.5
+        self.cd_time = self.update_cd
 
-    def update_static(self, coord, health_percent):
-        x, y = coord
-        if health_percent > 0:
-            pg.draw.rect(self.static_surface, (40, 40, 40), (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE, gfx.TILE_SIZE, 10))
+    def create_button(self, name: str, width: int, height: int, pos: tuple[int, int], color: tuple[int, int, int], round: bool):
+        if name not in self.buttons:
+            self.buttons[name] = Button(name, width, height, pos, color, round=round, surface=self.static_surface)
 
-            # Fill (e.g., green) — scaled to health percentage
-            fill_width = int(gfx.TILE_SIZE * (health_percent / 100))
-            pg.draw.rect(self.static_surface, (0, 255, 0), (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE, fill_width, 10))
+    def create_text(self, name, text, pos, font, size, color, updatable = False):
+        if updatable:
+            font = self.text_fonts.get_font(font, size)
+            self.updatable_text[name] = font.render(text, True, color)
         else:
-            self.static_surface.fill((0, 0, 0, 0), rect=(x * gfx.TILE_SIZE, y * gfx.TILE_SIZE, gfx.TILE_SIZE, 10))
+            font = self.text_fonts.get_font(font, size)
+            self.nonupdatable_text[name] = font.render(text, True, color)
+            self.static_surface.blit(self.nonupdatable_text[name], pos)
+
+
+    def load_cave_UI(self):
+        luck_upgrade_height = 50
+        self.create_button("Luck Upgrade", width=150, height=luck_upgrade_height, pos=(0, gfx.SCREEN_HEIGHT - luck_upgrade_height - 10), color=(255, 255 ,255), round=True)
+        self.create_text("Luck Upgrade", "Upgrade Luck", (0, gfx.SCREEN_HEIGHT - (luck_upgrade_height / 2) - 10), "default", 24, (0, 0, 0), False)
+
+
+    def update_cave_UI(self, dt, upgrade_ID = None, new_text = None):
+        self.cd_time -= dt
+        if self.cd_time <= 0 or upgrade_ID:
+            pass
+            
 
     def load_new(self):
         self.create_static_surface()
+        self.load_cave_UI()
+
+    def create_static_surface(self):
+        self.static_surface = pg.Surface((gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT), pg.SRCALPHA).convert_alpha()
+
+
+class Button():
+    def __init__(self, name, width, height, pos, color, round, surface):
+        self.name = name
+        self.width = width
+        self.height = height
+        self.pos = pos
+        self.color = color
+        if round:
+            self.round_radius = 1
+        else:
+            self.round_radius = 0
+        self.surface = surface
+        self.render()
+
+    def render(self):
+        x, y = self.pos
+        pg.draw.rect(self.surface, self.color, (x, y, self.width, self.height), border_radius=self.round_radius)
+
+
+        

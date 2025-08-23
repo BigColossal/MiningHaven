@@ -7,13 +7,14 @@ class Terrain:
 
         self._cave_surface: gfx.CaveSurface = None
         self._miner_surface: gfx.MinerSurface = None
+        self._ui_surface: gfx.UISurface = None
         self._event_handler: EventHandler = None
 
         self.data = []
 
         self._miners: list[Miner] = None
 
-        self.grid_size = 26
+        self.grid_size = 10
         self.middle = None
         self.visible_tiles = None
 
@@ -156,6 +157,9 @@ class Terrain:
     def set_event_handler(self, event_handler):
         self._event_handler = event_handler
 
+    def set_ui_surface(self, ui_surface):
+        self._ui_surface = ui_surface
+
     def wipe_terrain_data(self):
         self.data = []
 
@@ -224,6 +228,16 @@ class Terrain:
             healths.append(round(init_health * (change_rate ** i), 1))
 
         self.ore_base_healths = healths
+    
+    #TODO
+    def create_ore_golds(self):
+        init_gold = 1
+        change_rate = 2.5
+        golds = []
+        for i in range(self._ore_amount + 1): # + 1 because of stone
+            golds.append(round(init_gold * (change_rate ** i), 1))
+
+        self.ore_base_golds = golds
 
     def get_ore_health(self, type):
         index = type.value - 1

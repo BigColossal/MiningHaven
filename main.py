@@ -10,7 +10,8 @@ terrain = Terrain()
 
 cave_surface = gfx.CaveSurface()
 miner_surface = gfx.MinerSurface()
-surfaces = [cave_surface, miner_surface]
+ui_surface = gfx.UISurface()
+surfaces = [cave_surface, miner_surface, ui_surface]
 miners = []
 miner_amount = 3
 for i in range(miner_amount):
@@ -18,6 +19,7 @@ for i in range(miner_amount):
 
 terrain.set_cave_surface(cave_surface)
 terrain.set_miner_surface(miner_surface)
+terrain.set_ui_surface(ui_surface)
 terrain.set_miners(miners)
 for surface in surfaces:
     surface.set_terrain(terrain)

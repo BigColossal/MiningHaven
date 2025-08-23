@@ -13,7 +13,8 @@ class RenderManager:
         self.grid_size = self._terrain.grid_size
         self._cave_surface: gfx.CaveSurface = self._terrain._cave_surface
         self._miner_surface: gfx.MinerSurface = self._terrain._miner_surface
-        self.surfaces = [self._cave_surface, self._miner_surface]
+        self._ui_surface: gfx.UISurface = self._terrain._ui_surface
+        self.surfaces = [self._cave_surface, self._miner_surface, self._ui_surface]
 
         self.map_height, self.map_width = None, None
         self.offset_x, self.offset_y = None, None
@@ -82,7 +83,8 @@ class RenderManager:
 
             self.update_visible_rects()
             surfaces = [(self._cave_surface.static_surface, (0, 0), self._shadow_visible_rect),
-                        (self._miner_surface.static_surface, (0, 0), self._visible_rect)]
+                        (self._miner_surface.static_surface, (0, 0), self._visible_rect),
+                        (self._ui_surface.static_surface, (0, 0))]
             
             self._screen.blits(surfaces)
             if self.fps_counter.fps_counter:
