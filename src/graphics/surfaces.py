@@ -310,24 +310,51 @@ class UISurface(GameSurface):
         self.update_cd = 0.5
         self.cd_time = self.update_cd
 
-    def create_button(self, name: str, width: int, height: int, pos: tuple[int, int], color: tuple[int, int, int], round: bool):
-        if name not in self.buttons:
-            self.buttons[name] = Button(name, width, height, pos, color, round=round, surface=self.static_surface)
 
-    def create_text(self, name, text, pos, font, size, color, updatable = False):
+    def create_button_bg(self, name: str, width: int, height: int, pos: tuple[int, int], color: tuple[int, int, int], round: bool):
+        if name not in self.buttons:
+            self.buttons[name] = Button(name, width, height, pos, color, round=round)
+        self.buttons[name].render(surface=self.static_surface)
+
+
+    def create_text(self, name, text, pos, font, size, color, UI_height=None, updatable=False):
+        font_obj = self.text_fonts.get_font(font, size)
+        rendered_text = font_obj.render(text, True, color)
+
         if updatable:
-            font = self.text_fonts.get_font(font, size)
-            self.updatable_text[name] = font.render(text, True, color)
+            self.updatable_text[name] = rendered_text
         else:
-            font = self.text_fonts.get_font(font, size)
-            self.nonupdatable_text[name] = font.render(text, True, color)
-            self.static_surface.blit(self.nonupdatable_text[name], pos)
+            self.nonupdatable_text[name] = rendered_text
+
+        # Center the text on the button if it exists
+        if name in self.buttons:
+            button = self.buttons[name]
+            text_rect = rendered_text.get_rect()
+            text_x = button.pos[0] + (button.width - text_rect.width) // 2
+            text_y = button.pos[1] + (button.height - text_rect.height) // 2
+            pos = (text_x, text_y)
+        elif UI_height:
+            pos = (pos[0], pos[1] + (UI_height / (UI_height / size)))
+
+        self.static_surface.blit(rendered_text, pos)
+
+    def create_button(self, name, text, font, text_size, text_color, height, width, x, y, background_color, rounded):
+        self.create_button_bg(name, width, height,
+                            (x, y),
+                            background_color, rounded),
+        self.create_text(name, text, 
+                        (x, y),
+                        font, text_size, 
+                        text_color)
 
 
     def load_cave_UI(self):
-        luck_upgrade_height = 50
-        self.create_button("Luck Upgrade", width=150, height=luck_upgrade_height, pos=(0, gfx.SCREEN_HEIGHT - luck_upgrade_height - 10), color=(255, 255 ,255), round=True)
-        self.create_text("Luck Upgrade", "Upgrade Luck", (0, gfx.SCREEN_HEIGHT - (luck_upgrade_height / 2) - 10), "default", 24, (0, 0, 0), False)
+        self.buttons = {}
+        self.create_button(name="Luck Upgrade", text="Upgrade Luck", font="ubuntu", text_size=24, 
+                           text_color=(200, 255, 200), height=50, width=150,x=15, 
+                           y=gfx.SCREEN_HEIGHT - 65, background_color=(0, 0, 0), rounded=True)
+        
+        self._terrain._event_handler.set_buttons(self.buttons)
 
 
     def update_cave_UI(self, dt, upgrade_ID = None, new_text = None):
@@ -345,22 +372,19 @@ class UISurface(GameSurface):
 
 
 class Button():
-    def __init__(self, name, width, height, pos, color, round, surface):
+    def __init__(self, name, width, height, pos, color, round):
         self.name = name
         self.width = width
         self.height = height
         self.pos = pos
         self.color = color
-        if round:
-            self.round_radius = 1
-        else:
-            self.round_radius = 0
-        self.surface = surface
-        self.render()
+        self.round_radius = 10 if round else 0
+        self.rect = pg.Rect(pos[0], pos[1], width, height)
 
-    def render(self):
-        x, y = self.pos
-        pg.draw.rect(self.surface, self.color, (x, y, self.width, self.height), border_radius=self.round_radius)
+    def render(self, surface):
+        return pg.draw.rect(surface, self.color, self.rect, border_radius=self.round_radius)
 
+    def collidepoint(self, *args):
+        return self.rect.collidepoint(*args)
 
         

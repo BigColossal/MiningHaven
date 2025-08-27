@@ -22,6 +22,10 @@ class EventHandler:
         self.events = GameEvents
         self.graphics_engine = graphics_engine
         self.terrain = terrain
+        self.buttons: dict = None
+
+    def set_buttons(self, buttons):
+        self.buttons = buttons
 
     def handle_mouse_click(self, mouse_pos: tuple[int, int]):
         """
@@ -40,17 +44,13 @@ class EventHandler:
 
         # Convert screen coordinates to grid coordinates
         mouse_x, mouse_y = mouse_pos
+        for name, button in self.buttons.items():
+            if button.collidepoint(mouse_x, mouse_y):
+                pass
+
+
         tile_x = int((mouse_x + self.graphics_engine.offset_x) // gfx.TILE_SIZE)
         tile_y = int((mouse_y + self.graphics_engine.offset_y) // gfx.TILE_SIZE)
-        coord_broken = (tile_x, tile_y)
-
-        # Ensure the clicked tile is within terrain bounds
-        if 0 <= tile_x < self.terrain.grid_size and 0 <= tile_y < self.terrain.grid_size:
-            from src.game import terrainTypes
-
-            # Trigger tile break if it's not already walkable
-            if self.terrain.data[tile_y][tile_x].type != terrainTypes.Floor:
-                self.terrain.data[tile_y][tile_x].take_damage(100)
 
     def call_tile_broken(self, coords, new_grid=None, initialization=False):
         if isinstance(coords, tuple):
