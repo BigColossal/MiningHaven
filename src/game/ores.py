@@ -8,11 +8,12 @@ class terrainTypes(Enum):
     Iron = 4
 
 class Ore:
-    def __init__(self, type, health, pos, event_handler):
+    def __init__(self, type, health, gold, pos, event_handler):
         from src.game import EventHandler
         self.type: terrainTypes = type
         self.max_health: int = health
         self.health: int = health
+        self.gold: int = gold
         self.pos = pos
         self.event_handler: EventHandler = event_handler
 
@@ -23,6 +24,6 @@ class Ore:
 
     def check_status(self) -> bool:
         if self.health <= 0:
-            self.event_handler.call_tile_broken(self.pos)
+            self.event_handler.call_tile_broken(self.pos, gold_amount=self.gold)
             return True
         return False

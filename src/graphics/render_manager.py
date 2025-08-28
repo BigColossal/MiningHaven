@@ -78,7 +78,8 @@ class RenderManager:
 
     def render(self, dt, fps):
         if self.dirty or self.darkening or self.lightening:
-            self.fps_counter.set_FPS_counter(fps, dt)
+            self._ui_surface.get_fps(fps)
+            self._ui_surface.update_cave_UI(dt)
             self.fill(gfx.BG_COLOR)
 
             self.update_visible_rects()
@@ -87,8 +88,6 @@ class RenderManager:
                         (self._ui_surface.static_surface, (0, 0))]
             
             self._screen.blits(surfaces)
-            if self.fps_counter.fps_counter:
-                self.fps_counter.render()
             if self.darkening:
                 self.darken_screen(dt)
             elif self.lightening:

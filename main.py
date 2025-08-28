@@ -75,6 +75,9 @@ def main():
             if event.type == events_handler.events.LUCK_UPGRADED.value:
                 upgrade_manager.increment_ore_luck(event.multiplier)
 
+            if event.type == events_handler.events.GOLD_GIVEN.value:
+                upgrade_manager.increment_gold(event.amount)
+
         terrain.clear_ores_damaged()
         terrain.miner_decision_make(dt)
         graphics_engine.update_healthbars()

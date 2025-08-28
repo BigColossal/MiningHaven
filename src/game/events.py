@@ -13,11 +13,12 @@ class GameEvents(Enum):
         CAVE_CLEARED: Marks a cave as cleared or completed, potentially tied to gameplay progress.
     """
     TILE_BROKEN = pg.USEREVENT + 1
-    SCREEN_DARKENING = pg.USEREVENT + 2
-    SCREEN_LIGHTENING = pg.USEREVENT + 3
-    CAVE_CLEARED = pg.USEREVENT + 4
-    LUCK_UPGRADED = pg.USEREVENT + 5
-    ORE_VALUE_UPGRADED = pg.USEREVENT + 6
+    GOLD_GIVEN = pg.USEREVENT + 2
+    SCREEN_DARKENING = pg.USEREVENT + 3
+    SCREEN_LIGHTENING = pg.USEREVENT + 4
+    CAVE_CLEARED = pg.USEREVENT + 5
+    LUCK_UPGRADED = pg.USEREVENT + 6
+    ORE_VALUE_UPGRADED = pg.USEREVENT + 7
 
 class EventHandler:
     def __init__(self, graphics_engine, terrain):
@@ -58,11 +59,12 @@ class EventHandler:
         if button_name == "Luck Upgrade":
             pg.event.post(pg.event.Event(GameEvents.LUCK_UPGRADED.value, {'multiplier': 1.5}))
 
-    def call_tile_broken(self, coords, new_grid=None, initialization=False):
+    def call_tile_broken(self, coords, new_grid=None, initialization=False, gold_amount=0):
         if isinstance(coords, tuple):
             coords = [coords]
         pg.event.post(pg.event.Event(GameEvents.TILE_BROKEN.value, {'positions': coords, 'new_grid': new_grid,
                                                                     "initialization": initialization}))
+        pg.event.post(pg.event.Event(GameEvents.GOLD_GIVEN.value, {'amount': gold_amount}))
         
     def call_cave_cleared(self):
         pg.event.post(pg.event.Event(GameEvents.CAVE_CLEARED.value))

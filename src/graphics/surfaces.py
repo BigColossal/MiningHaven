@@ -304,27 +304,35 @@ class UISurface(GameSurface):
     def __init__(self):
         super().__init__()
         self.buttons = {}
-        self.updatable_text = {}
-        self.nonupdatable_text = {}
+        self.text = {}
         self.text_fonts = gfx.TextHandler()
-        self.update_cd = 0.5
-        self.cd_time = self.update_cd
+        self.update_cd = 0.05
+        self.cd_time = 0
+        self.upgrades_manager = None
+        self.update_list = set()
+        self.past_fps = gfx.FPS
+        self.FPS = self.past_fps
 
+    def set_upgrades_manager(self, upgrade_manager):
+        self.upgrades_manager = upgrade_manager
+
+    def add_to_update_list(self, info: tuple[str, bool]):
+        self.update_list.add(info)
+
+    def clear_update_list(self):
+        self.update_list = set()
 
     def create_button_bg(self, name: str, width: int, height: int, pos: tuple[int, int], color: tuple[int, int, int], round: bool):
         if name not in self.buttons:
-            self.buttons[name] = Button(name, width, height, pos, color, round=round)
-        self.buttons[name].render(surface=self.static_surface)
+            return Button(name, width, height, pos, color, round=round)
 
 
-    def create_text(self, name, text, pos, font, size, color, UI_height=None, updatable=False):
+    def create_text(self, name, text, pos, font, size, color, UI_height=None, updatable=False, button=False):
         font_obj = self.text_fonts.get_font(font, size)
         rendered_text = font_obj.render(text, True, color)
 
-        if updatable:
-            self.updatable_text[name] = rendered_text
-        else:
-            self.nonupdatable_text[name] = rendered_text
+        if updatable and not button:
+            self.add_to_update_list((name, False))
 
         # Center the text on the button if it exists
         if name in self.buttons:
@@ -336,36 +344,56 @@ class UISurface(GameSurface):
         elif UI_height:
             pos = (pos[0], pos[1] + (UI_height / (UI_height / size)))
 
-        self.static_surface.blit(rendered_text, pos)
+        return (rendered_text, pos)
 
     def create_button(self, name, text, font, text_size, text_color, height, width, x, y, background_color, rounded):
-        self.create_button_bg(name, width, height,
+        self.buttons[name] = self.create_button_bg(name, width, height,
                             (x, y),
-                            background_color, rounded),
-        self.create_text(name, text, 
+                            background_color, rounded)
+        self.text[name] = self.create_text(name, text, 
                         (x, y),
                         font, text_size, 
-                        text_color)
+                        text_color, button=True)
+        
+        self.add_to_update_list((name, True))
 
 
     def load_cave_UI(self):
         self.buttons = {}
+        self.clear_update_list()
         self.create_button(name="Luck Upgrade", text="Upgrade Luck", font="ubuntu", text_size=24, 
                            text_color=(200, 255, 200), height=50, width=150,x=15, 
                            y=gfx.SCREEN_HEIGHT - 65, background_color=(0, 0, 0), rounded=True)
         
         self._terrain._event_handler.set_buttons(self.buttons)
 
+    def get_fps(self, FPS):
+        self.past_fps = FPS
+        self.FPS = int(FPS)
+        if self.FPS != self.past_fps:
+            self.text["FPS"] = self.create_text(name="FPS", text=f"fps {self.FPS}", pos=(0, 0), 
+                            font="ubuntu", size=40, color=(120, 225, 120), updatable=True)
+            self.add_to_update_list(("FPS", False))
 
-    def update_cave_UI(self, dt, upgrade_ID = None, new_text = None):
+    def update_cave_UI(self, dt):
         self.cd_time -= dt
-        if self.cd_time <= 0 or upgrade_ID:
-            pass
+        if self.cd_time <= 0:
+            for name, button in self.update_list:
+                if button:
+                    # render button background
+                    self.buttons[name].render(self.static_surface)
+                # render text
+                text, pos = self.text[name] 
+                self.static_surface.blit(text, pos)
+
+            self.clear_update_list()
+            self.cd_time = self.update_cd
             
 
     def load_new(self):
         self.create_static_surface()
         self.load_cave_UI()
+        self.update_cave_UI(0)
 
     def create_static_surface(self):
         self.static_surface = pg.Surface((gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT), pg.SRCALPHA).convert_alpha()

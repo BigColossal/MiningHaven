@@ -14,7 +14,7 @@ class Terrain:
 
         self._miners: list[Miner] = None
 
-        self.grid_size = 10
+        self.grid_size = 100
         self.middle = None
         self.visible_tiles = None
 
@@ -24,6 +24,8 @@ class Terrain:
         self.create_ore_chances()
         self.ore_base_healths = []
         self.create_ore_healths()
+        self.ore_base_golds = []
+        self.create_ore_golds()
         self.ores_damaged: set[tuple[tuple[int, int], float]] = set()
 
         self._ore_chances = {}
@@ -46,7 +48,8 @@ class Terrain:
         self.restart_objects()
         self.tile_amount = self.grid_size * self.grid_size
         stone_health = self.get_ore_health(self.terrain_types.Stone)
-        self.data = [[Ore(self.terrain_types.Stone, stone_health, (x, y), self._event_handler) for x in range(self.grid_size)] for y in range(self.grid_size)]
+        stone_gold = self.get_ore_gold(self.terrain_types.Stone)
+        self.data = [[Ore(self.terrain_types.Stone, stone_health, stone_gold, (x, y), self._event_handler) for x in range(self.grid_size)] for y in range(self.grid_size)]
         self._event_handler.call_tile_broken([(self.middle, self.middle)])
         self._cave_helper.generate_caves()
         self.spawn_miners()
@@ -120,7 +123,8 @@ class Terrain:
             x, y = coord
             ore_type = self.terrain_types(self.choose_ore_type())
             ore_health = self.get_ore_health(ore_type)
-            self.data[y][x] = Ore(ore_type, ore_health, coord, self._event_handler)
+            ore_gold = self.get_ore_gold(ore_type)
+            self.data[y][x] = Ore(ore_type, ore_health, ore_gold, coord, self._event_handler)
 
     def choose_ore_type(self, ) -> int:
         import random
@@ -172,7 +176,7 @@ class Terrain:
         if self.tile_amount > 0:
             self.tile_amount -= 1
         x, y = coord
-        grid[y][x] = Ore(self.terrain_types.Floor, 0, (x, y), self._event_handler)
+        grid[y][x] = Ore(self.terrain_types.Floor, 0, 0, (x, y), self._event_handler)
         self.visible_tiles.add(coord)
         self._cave_helper.check_if_in_cave((x, y))
 
@@ -231,7 +235,6 @@ class Terrain:
 
         self.ore_base_healths = healths
     
-    #TODO
     def create_ore_golds(self):
         init_gold = 1
         change_rate = 2.5
@@ -244,6 +247,10 @@ class Terrain:
     def get_ore_health(self, type):
         index = type.value - 1
         return self.ore_base_healths[index]
+    
+    def get_ore_gold(self, type):
+        index = type.value - 1
+        return self.ore_base_golds[index]
 
     def check_if_cleared(self):
         if self.tile_amount == 0:
