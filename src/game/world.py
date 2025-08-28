@@ -186,7 +186,7 @@ class Terrain:
         change_rate = 4
         chances = []
         for i in range(self._ore_amount):
-            chances.append(round(init_chance * max(1, ((change_rate ** i) * (i * 1.05))), 1))
+            chances.insert(0, round(init_chance * max(1, ((change_rate ** i) * (i * 1.05))), 1))
 
         self.ore_base_chances = chances
 
@@ -195,14 +195,17 @@ class Terrain:
         index = 2  # Start from 1 so we reserve index 0 for stone
         for base_chance in self.ore_base_chances:
             num = base_chance
-            chance = (self.ore_luck / num) * 100
+            chance = self.ore_luck * num
 
             if chance > soft_cap:
                 overflow = chance - soft_cap
                 chance = soft_cap - (overflow * decay_rate)
+                if index == len(self.ore_base_chances) + 1:
+                    chance = max(1, chance) # Make the last, most valuable ore always spawn no matter what
 
             if chance <= 0.01:
-                continue  # Skip negligible chance ores
+                index += 1  # Skip negligible chance ores
+                continue
 
             modified[index] = chance
             index += 1
@@ -217,7 +220,6 @@ class Terrain:
 
         # Force stone to be the remaining chance
         normalized[1] = round(100 - self._ore_appearance_rate, 2)
-
         self._ore_chances = normalized
 
     def create_ore_healths(self):

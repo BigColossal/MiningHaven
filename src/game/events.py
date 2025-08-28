@@ -16,6 +16,8 @@ class GameEvents(Enum):
     SCREEN_DARKENING = pg.USEREVENT + 2
     SCREEN_LIGHTENING = pg.USEREVENT + 3
     CAVE_CLEARED = pg.USEREVENT + 4
+    LUCK_UPGRADED = pg.USEREVENT + 5
+    ORE_VALUE_UPGRADED = pg.USEREVENT + 6
 
 class EventHandler:
     def __init__(self, graphics_engine, terrain):
@@ -46,11 +48,15 @@ class EventHandler:
         mouse_x, mouse_y = mouse_pos
         for name, button in self.buttons.items():
             if button.collidepoint(mouse_x, mouse_y):
-                pass
+                self.call_button_type(name)
 
 
         tile_x = int((mouse_x + self.graphics_engine.offset_x) // gfx.TILE_SIZE)
         tile_y = int((mouse_y + self.graphics_engine.offset_y) // gfx.TILE_SIZE)
+
+    def call_button_type(self, button_name):
+        if button_name == "Luck Upgrade":
+            pg.event.post(pg.event.Event(GameEvents.LUCK_UPGRADED.value, {'multiplier': 1.5}))
 
     def call_tile_broken(self, coords, new_grid=None, initialization=False):
         if isinstance(coords, tuple):

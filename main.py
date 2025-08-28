@@ -1,4 +1,4 @@
-from src.game import Terrain, EventHandler, Miner
+from src.game import Terrain, EventHandler, Miner, UpgradesManager
 import src.graphics as gfx
 import pygame as pg
 import math
@@ -11,6 +11,8 @@ terrain = Terrain()
 cave_surface = gfx.CaveSurface()
 miner_surface = gfx.MinerSurface()
 ui_surface = gfx.UISurface()
+
+upgrade_manager = UpgradesManager(terrain)
 surfaces = [cave_surface, miner_surface, ui_surface]
 miners = []
 miner_amount = 3
@@ -69,6 +71,9 @@ def main():
                 terrain.initialize_terrain()
                 graphics_engine.set_initial_offset()
                 graphics_engine.load_new_cave()
+
+            if event.type == events_handler.events.LUCK_UPGRADED.value:
+                upgrade_manager.increment_ore_luck(event.multiplier)
 
         terrain.clear_ores_damaged()
         terrain.miner_decision_make(dt)
