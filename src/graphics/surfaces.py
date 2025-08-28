@@ -365,12 +365,13 @@ class UISurface(GameSurface):
                            text_color=(200, 255, 200), height=50, width=150,x=15, 
                            y=gfx.SCREEN_HEIGHT - 65, background_color=(0, 0, 0), rounded=True)
         
+        
         self._terrain._event_handler.set_buttons(self.buttons)
 
     def get_fps(self, FPS):
         self.past_fps = FPS
         self.FPS = int(FPS)
-        if self.FPS != self.past_fps:
+        if self.FPS <= self.past_fps + 2 or self.FPS >= self.past_fps + 2:
             self.text["FPS"] = self.create_text(name="FPS", text=f"fps {self.FPS}", pos=(0, 0), 
                             font="ubuntu", size=40, color=(120, 225, 120), updatable=True)
             self.add_to_update_list(("FPS", False))
@@ -383,7 +384,11 @@ class UISurface(GameSurface):
                     # render button background
                     self.buttons[name].render(self.static_surface)
                 # render text
-                text, pos = self.text[name] 
+                text, pos = self.text[name]
+                width, height = text.get_width(), text.get_height()
+                text_area = pg.Rect(pos[0], pos[1], width, height)
+                self.static_surface.fill((0, 0, 0, 0), text_area) # erase area
+
                 self.static_surface.blit(text, pos)
 
             self.clear_update_list()
