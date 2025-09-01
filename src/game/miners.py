@@ -17,7 +17,7 @@ class Miner():
         self.movement_speed = 10
         self.mine_cd = 0.075
         self.cd_timer = self.mine_cd
-        self.damage = 50
+        self.damage = 35
         self.miner_type = "Normal"
 
     def spawn_miner(self):
@@ -115,9 +115,9 @@ class Miner():
             if ore.health > 0:
                 destroyed = ore.take_damage(self.damage)
             try:
-                self._terrain.ores_damaged.add((self._target, (ore.health / ore.max_health) * 100))
+                self._terrain.ores_damaged[self._target] = ((ore.health / ore.max_health) * 100, 2.5)
             except ZeroDivisionError:
-                self._terrain.ores_damaged.add((self._target, 0))
+                self._terrain.ores_damaged[self._target] = ((0, 0.0))
             if destroyed:
                 self._path = [self._target]  # Move into the mined tile
                 self._state = "Moving"
@@ -176,7 +176,7 @@ class FireMiner(Miner):
                 if target_x < self._terrain.grid_size and target_y < self._terrain.grid_size:
                     if self._terrain.data[target_y][target_x].type != self._terrain.terrain_types.Floor and \
                         (target_x, target_y) in self._terrain.visible_tiles:
-                            targets.append((target_x, target_y))
+                            targets.insert(0, (target_x, target_y))
             for target in targets:
                 x, y = target
                 ore = self._terrain.data[y][x]
@@ -188,17 +188,98 @@ class FireMiner(Miner):
                         dmg_factor = 1
                     destroyed = ore.take_damage(self.damage * dmg_factor)
                 try:
-                    self._terrain.ores_damaged.add((target, (ore.health / ore.max_health) * 100))
+                    self._terrain.ores_damaged[target] = ((ore.health / ore.max_health) * 100, 2.5)
                 except ZeroDivisionError:
-                    self._terrain.ores_damaged.add((target, 0))
-                if destroyed and target == self._target:
-                    self._path = [self._target]  # Move into the mined tile
-                    self._state = "Moving"
-                    self._sub_state = "Grid Moving"
+                    self._terrain.ores_damaged[target] = ((0, 0.0))
+            
+            target_x, target_y = self._target
+            if self._terrain.data[target_y][target_x].health <= 0:
+                self._path = [self._target]  # Move into the mined tile
+                self._state = "Moving"
+                self._sub_state = "Grid Moving"
             self.cd_timer = self.mine_cd
         else:
             self.cd_timer = max(0, self.cd_timer - dt)
 
+class LightningMiner(Miner):
+    def __init__(self, terrain):
+        super().__init__(terrain)
+        self.miner_type = "Lightning"
+
+    def mine(self, dt):
+        if self.cd_timer <= 0:
+            path = self.get_chain_path()
+            for target in path:
+                x, y = target
+                ore = self._terrain.data[y][x]
+                destroyed = True
+                if ore.health > 0:
+                    if target != self._target:
+                        dmg_factor = 0.1
+                    else:
+                        dmg_factor = 1
+                    destroyed = ore.take_damage(self.damage * dmg_factor)
+                try:
+                    self._terrain.ores_damaged[target] = ((ore.health / ore.max_health) * 100, 2.5)
+                except ZeroDivisionError:
+                    self._terrain.ores_damaged[target] = ((0, 0.0))
+
+            target_x, target_y = self._target
+            if self._terrain.data[target_y][target_x].health <= 0:
+                self._path = [self._target]  # Move into the mined tile
+                self._state = "Moving"
+                self._sub_state = "Grid Moving"
+            self.cd_timer = self.mine_cd
+        else:
+            self.cd_timer = max(0, self.cd_timer - dt)
+
+    def get_chain_path(self):
+        from collections import deque
+        visited = set()
+        path = []
+        queue = deque()
+        queue.append(self._target)  # Start from the target ore
+        ore_limit = 4
+
+        while queue and len(path) < ore_limit:
+            current_pos = queue.popleft()
+            x, y = current_pos
+
+            if current_pos in visited:
+                continue
+            visited.add(current_pos)
+
+            # Skip if it's a floor tile
+            if self._terrain.data[y][x].type == self._terrain.terrain_types.Floor or (x, y) not in self._terrain.visible_tiles:
+                continue
+
+            """# Check adjacency to existing path
+            is_adjacent = any(
+                abs(x - px) + abs(y - py) == 1
+                for px, py in path
+            )
+            if not is_adjacent and path:
+                continue  # Only add if adjacent to something already in path"""
+            if not path or abs(x - path[-1][0]) + abs(y - path[-1][1]) == 1:
+                path.insert(0, current_pos)
+
+                import random
+
+                # Define directions (up, down, left, right)
+                directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+                random.shuffle(directions)  # Randomize the order
+
+                # Explore neighbors (up, down, left, right)
+                for dx, dy in directions:
+                    nx, ny = x + dx, y + dy
+                    if (
+                        0 <= nx < self._terrain.grid_size and
+                        0 <= ny < self._terrain.grid_size and
+                        (nx, ny) not in visited
+                    ):
+                        queue.append((nx, ny))
+
+        return path
 
         
         

@@ -15,6 +15,7 @@ class RenderManager:
         self._miner_surface: gfx.MinerSurface = self._terrain._miner_surface
         self._ui_surface: gfx.UISurface = self._terrain._ui_surface
         self.surfaces = [self._cave_surface, self._miner_surface, self._ui_surface]
+        self._cave_surface.set_game_sprites(self._GAME_SPRITES)
 
         self.map_height, self.map_width = None, None
         self.offset_x, self.offset_y = None, None
@@ -58,12 +59,8 @@ class RenderManager:
     def load_new_cave(self): # for drawing brand new caves
         self._cave_surface.set_objects()
         self._miner_surface.update_miner_amount()
-        surfaces_with_game_sprites = [self._cave_surface]
         for surface in self.surfaces:
-            if surface in surfaces_with_game_sprites:
-                surface.load_new(self._GAME_SPRITES)
-            else:
-                surface.load_new()
+            surface.load_new()
 
     def check_miner_pos(self):
         miners_changed = False
@@ -116,27 +113,32 @@ class RenderManager:
                             (x - 1, y - 1), (x - 1, y + 1), (x + 1, y + 1), (x + 1, y -1)]
         
         self._cave_surface.update_darkness((x, y), darken=False)
-        self._cave_surface.update_terrain_tile(self._GAME_SPRITES, coord)
-        self._cave_surface.update_object(coord, self._GAME_SPRITES)
-        self._cave_surface.update_tile_edges(self._GAME_SPRITES, coord)
+        self._cave_surface.update_terrain_tile(coord)
+        self._cave_surface.update_object(coord)
+        self._cave_surface.update_tile_edges(coord)
         for coord in coords_to_check:
             x, y = coord
             if (x >= 0 and x < self.grid_size) and (y >= 0 and y < self.grid_size):
                 type = self._terrain.data[y][x].type
                 if type != self._terrain.terrain_types.Floor and coord not in self._cave_surface.ores_damaged:
                     self._cave_surface.update_darkness((x, y), darken=False)
-                    self._cave_surface.update_terrain_tile(self._GAME_SPRITES, coord)
+                    self._cave_surface.update_terrain_tile(coord)
 
     def update_visible_rects(self):
         self._visible_rect.topleft = (self.offset_x, self.offset_y)
 
         self._shadow_visible_rect.topleft = (self.offset_x - gfx.SHADOW_OFFSET[0], self.offset_y - gfx.SHADOW_OFFSET[1])
 
-    def update_healthbars(self):
+    def update_healthbars(self, dt):
         if self._terrain.ores_damaged:
             self.dirty = True
-            for coord, health_percent in self._terrain.ores_damaged:
-                self._cave_surface.update_ore_health(coord, health_percent)
+            for coord, info in self._terrain.ores_damaged.items():
+                health_percent, timer = info
+                timer -= dt
+                self._terrain.ores_damaged[coord] = (health_percent, timer)
+                self._cave_surface.update_ore_health(coord, health_percent, timer)
+
+                
 
     def move_camera(self, keys):
         move_x = 0

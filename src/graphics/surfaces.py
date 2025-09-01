@@ -31,20 +31,24 @@ class CaveSurface(GameSurface):
         from src.game import GameObject
         self.objects: dict[tuple[int, int]: GameObject] = {}
         self.ores_damaged: set[tuple[int, int]] = set()
+        self.game_sprites: gfx.GameSprites = None
+
+    def set_game_sprites(self, game_sprites: gfx.GameSprites):
+        self.game_sprites = game_sprites
 
     def set_objects(self):
         self.objects = self._terrain._objects
 
-    def update_tile_edges(self, game_sprites: gfx.GameSprites, coord: tuple[int, int]):
+    def update_tile_edges(self, coord: tuple[int, int]):
         x, y = coord
         directions = []
         if coord in self._terrain.edge_map:
             directions = self._terrain.edge_map[coord]
 
-        surrounding_floor, shadow_surf = self.create_shadow_surf(game_sprites, directions, coord)
+        surrounding_floor, shadow_surf = self.create_shadow_surf(directions, coord)
         self.static_surface.blit(shadow_surf, ((x + self.padding) * gfx.TILE_SIZE, (y + self.padding) * gfx.TILE_SIZE))
 
-        outl_surf = self.create_outline_surf(game_sprites, directions)
+        outl_surf = self.create_outline_surf(directions)
         self.static_surface.blit(outl_surf, ((x + self.padding) * gfx.TILE_SIZE, (y + self.padding) * gfx.TILE_SIZE))
 
         direction_coords = {
@@ -64,21 +68,21 @@ class CaveSurface(GameSurface):
             self.static_surface.fill((0, 0, 0, 0), ((neigh_x + self.padding) * gfx.TILE_SIZE, (neigh_y + self.padding) * gfx.TILE_SIZE, 
                                               gfx.TILE_SIZE, gfx.TILE_SIZE)) # clear out neighbor tile as to update the outlines there
             
-            self.update_terrain_tile(game_sprites, neighbor_floor_pos)
-            self.update_object(neighbor_floor_pos, game_sprites)
+            self.update_terrain_tile(neighbor_floor_pos)
+            self.update_object(neighbor_floor_pos)
             
-            _, neighbor_surf = self.create_shadow_surf(game_sprites, neighbor_directions, neighbor_floor_pos)
+            _, neighbor_surf = self.create_shadow_surf(neighbor_directions, neighbor_floor_pos)
             self.static_surface.blit(neighbor_surf, ((neigh_x + self.padding) * gfx.TILE_SIZE, (neigh_y + self.padding) * gfx.TILE_SIZE))
             if neighbor_directions:
-                neighbor_surf = self.create_outline_surf(game_sprites, neighbor_directions)
+                neighbor_surf = self.create_outline_surf(neighbor_directions)
                 self.static_surface.blit(neighbor_surf, ((neigh_x + self.padding) * gfx.TILE_SIZE, (neigh_y + self.padding) * gfx.TILE_SIZE))
 
-    def update_terrain_tile(self, game_sprites: gfx.GameSprites, coord: tuple[int, int]):
+    def update_terrain_tile(self, coord: tuple[int, int]):
         x, y = coord
-        tile = game_sprites.get_terrain_tile(self._terrain.data[y][x].type)
+        tile = self.game_sprites.get_terrain_tile(self._terrain.data[y][x].type)
         self.static_surface.blit(tile, ((x + self.padding) * gfx.TILE_SIZE, (y + self.padding) * gfx.TILE_SIZE))
 
-    def create_outline_surf(self, game_sprites: gfx.GameSprites, edge_directions):
+    def create_outline_surf(self, edge_directions):
             direction_log = {"Up", "Right", "Down", "Left"}
 
             self._tmp_tile.fill((0,0,0,0))  # reset
@@ -87,12 +91,12 @@ class CaveSurface(GameSurface):
             for direction in edge_directions:
                 direction_log.discard(direction) # removes from list as it will be used to check which direction has no edge
 
-                outline_tile = game_sprites.get_outline_tile(direction)
+                outline_tile = self.game_sprites.get_outline_tile(direction)
                 self._tmp_tile.blit(outline_tile, (0, 0))
 
             return self._tmp_tile.copy()
     
-    def create_shadow_surf(self, game_sprites: gfx.GameSprites, edge_directions, coord):
+    def create_shadow_surf(self, edge_directions, coord):
             """
             Composes the shadow surface for a tile based on directional edges and floor-type corners.
 
@@ -129,7 +133,7 @@ class CaveSurface(GameSurface):
             if edge_directions:
                 for direction in edge_directions:
                     direction_log.remove(direction)
-                    shadow_tile = game_sprites.get_shadow_tile(direction)
+                    shadow_tile = self.game_sprites.get_shadow_tile(direction)
                     shadow_surface.blit(shadow_tile, (0, 0))
 
             valid_directions = []
@@ -152,13 +156,13 @@ class CaveSurface(GameSurface):
                 if dir1 in surrounding_floor and dir2 in surrounding_floor:
                     corner = f"{dir1} {dir2}"
                     if corner not in corner_floors:
-                        corner_shadow_tile = game_sprites.get_shadow_tile(corner)
+                        corner_shadow_tile = self.game_sprites.get_shadow_tile(corner)
                         shadow_surface.blit(corner_shadow_tile, (0, 0))
 
             return surrounding_floor, shadow_surface
 
-    def add_surrounding_shadow(self, game_sprites: gfx.GameSprites, tile_coord: tuple[int, int], direction: str):
-        shadow_tile = game_sprites.get_surrounding_shadow_tile(direction)
+    def add_surrounding_shadow(self, tile_coord: tuple[int, int], direction: str):
+        shadow_tile = self.game_sprites.get_surrounding_shadow_tile(direction)
         x, y = tile_coord
         tile_size = gfx.TILE_SIZE
 
@@ -176,29 +180,35 @@ class CaveSurface(GameSurface):
             self.static_surface.fill((0, 0, 0, 0), ((x + self.padding) * gfx.TILE_SIZE, (y + self.padding) * gfx.TILE_SIZE,
                                                 gfx.TILE_SIZE, gfx.TILE_SIZE))
             
-    def update_object(self, coord, game_sprites: gfx.GameSprites):
+    def update_object(self, coord):
         if coord in self.objects:
             x, y = coord
             obj = self.objects[coord]
             if obj.on_floor:
-                obj_sprite = game_sprites.get_object_tile(obj.name)
+                obj_sprite = self.game_sprites.get_object_tile(obj.name)
                 self.static_surface.blit(obj_sprite, ((x + self.padding) * gfx.TILE_SIZE, (y + self.padding) * gfx.TILE_SIZE))
             else:
                 pass
 
-    def update_ore_health(self, coord, health_percent):
+    def update_ore_health(self, coord, health_percent, timer):
         x, y = coord
-        if health_percent > 0:
+        transparency = 255
+        if timer <= 0.5 and timer > 0:
+            transparency = timer * 255
+
+        if health_percent > 0 and timer > 0:
             self.ores_damaged.add(coord)
-            pg.draw.rect(self.static_surface, (40, 40, 40), ((x + self.padding) * gfx.TILE_SIZE, (y + self.padding) * gfx.TILE_SIZE, gfx.TILE_SIZE, 10))
+            pg.draw.rect(self.static_surface, (40, 40, 40, transparency), ((x + self.padding) * gfx.TILE_SIZE, (y + self.padding) * gfx.TILE_SIZE, gfx.TILE_SIZE, 10))
 
             # Fill (e.g., green) — scaled to health percentage
             fill_width = int(gfx.TILE_SIZE * (health_percent / 100))
-            pg.draw.rect(self.static_surface, (0, 255, 0), ((x + self.padding) * gfx.TILE_SIZE, (y + self.padding) * gfx.TILE_SIZE, fill_width, 10))
-        else:
+            pg.draw.rect(self.static_surface, (0, 255, 0, transparency), ((x + self.padding) * gfx.TILE_SIZE, (y + self.padding) * gfx.TILE_SIZE, fill_width, 10))
+        elif health_percent <= 0 or timer <= 0:
             self.ores_damaged.discard(coord)
+            if health_percent > 0:
+                self.update_terrain_tile((coord))
 
-    def load_new(self, game_sprites: gfx.GameSprites):
+    def load_new(self):
         grid_size = self._terrain.grid_size
         tile_size = gfx.TILE_SIZE
         padding = self.padding
@@ -233,14 +243,14 @@ class CaveSurface(GameSurface):
                     # Shift tile coords to match padded surface origin
                     draw_x = x + padding
                     draw_y = y + padding
-                    self.add_surrounding_shadow(game_sprites, (draw_x, draw_y), direction)
+                    self.add_surrounding_shadow((draw_x, draw_y), direction)
 
         for y in range(self._terrain.grid_size):
             for x in range(self._terrain.grid_size):
                 if (x, y) not in self._terrain.visible_tiles:
                     self.update_darkness((x, y))
                 else:
-                    self.update_terrain_tile(game_sprites, (x, y))
+                    self.update_terrain_tile((x, y))
 
         pg.draw.rect(self.static_surface, (175, 220, 240), (
             -2 + (self.padding * gfx.TILE_SIZE),
@@ -263,12 +273,13 @@ class MinerSurface(GameSurface):
     def update_miner_amount(self):
         self.miners = self._terrain._miners
 
+    
     def get_sprite(self, miner_type: str):
         if miner_type not in self.sprites:
             surface = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA)
             if miner_type == "Fire":
                 color = (200, 150 ,50)
-            elif miner_type == "Normal":
+            elif miner_type == "Lightning":
                 color = (200, 200, 5)
             circle_size = int(gfx.TILE_SIZE / 2)
             pg.draw.circle(surface, color, (circle_size, circle_size), circle_size - (gfx.TILE_SIZE / 4))

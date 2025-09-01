@@ -1,4 +1,4 @@
-from src.game import Terrain, EventHandler, Miner, UpgradesManager, FireMiner
+from src.game import Terrain, EventHandler, Miner, UpgradesManager, FireMiner, LightningMiner
 import src.graphics as gfx
 import pygame as pg
 import math
@@ -17,13 +17,13 @@ ui_surface.set_upgrades_manager(upgrade_manager)
 
 surfaces = [cave_surface, miner_surface, ui_surface]
 miners = []
-miner_amount = 5
-fire_miner_amount = 5
+lightning_miner_amount = 10
+fire_miner_amount = 10
 for i in range(fire_miner_amount):
     miners.append(FireMiner(terrain))
 
-for i in range(miner_amount):
-    miners.append(Miner(terrain))
+for i in range(lightning_miner_amount):
+    miners.append(LightningMiner(terrain))
 
 terrain.set_cave_surface(cave_surface)
 terrain.set_miner_surface(miner_surface)
@@ -88,10 +88,8 @@ def main():
                 upgrade_manager.increment_gold(event.amount)
                 ui_surface.update_text("Gold Amount", f"Gold: {upgrade_manager.gold}")
 
-
-        terrain.clear_ores_damaged()
         terrain.miner_decision_make(dt)
-        graphics_engine.update_healthbars()
+        graphics_engine.update_healthbars(dt)
         graphics_engine.check_miner_pos()
 
         graphics_engine.render(dt, fps)

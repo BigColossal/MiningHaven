@@ -14,7 +14,7 @@ class Terrain:
 
         self._miners: list[Miner] = None
 
-        self.grid_size = 100
+        self.grid_size = 50
         self.middle = None
         self.visible_tiles = None
 
@@ -27,7 +27,7 @@ class Terrain:
         self.ore_base_golds = []
         self.ore_value_mult = 1
         self.create_ore_golds()
-        self.ores_damaged: set[tuple[tuple[int, int], float]] = set()
+        self.ores_damaged: dict[tuple[int, int]: tuple[float, float]] = {}
 
         self._ore_chances = {}
         self.ore_luck = 1
@@ -56,7 +56,7 @@ class Terrain:
         self.spawn_miners()
 
     def clear_ores_damaged(self):
-        self.ores_damaged = set()
+        self.ores_damaged = {}
 
     def restart_objects(self):
         self._objects = {}
