@@ -1,4 +1,4 @@
-from src.game import Terrain, EventHandler, Miner, UpgradesManager
+from src.game import Terrain, EventHandler, Miner, UpgradesManager, FireMiner
 import src.graphics as gfx
 import pygame as pg
 import math
@@ -17,7 +17,11 @@ ui_surface.set_upgrades_manager(upgrade_manager)
 
 surfaces = [cave_surface, miner_surface, ui_surface]
 miners = []
-miner_amount = 10
+miner_amount = 5
+fire_miner_amount = 5
+for i in range(fire_miner_amount):
+    miners.append(FireMiner(terrain))
+
 for i in range(miner_amount):
     miners.append(Miner(terrain))
 

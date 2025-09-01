@@ -18,6 +18,7 @@ class Miner():
         self.mine_cd = 0.075
         self.cd_timer = self.mine_cd
         self.damage = 50
+        self.miner_type = "Normal"
 
     def spawn_miner(self):
         cave_mid = (self._terrain.middle, self._terrain.middle)
@@ -160,5 +161,44 @@ class Miner():
         xdir *= 0.25
         ydir *= 0.25
         return [(x + xdir, y + ydir)]
+    
+class FireMiner(Miner):
+    def __init__(self, terrain):
+        super().__init__(terrain)
+        self.miner_type = "Fire"
+
+    def mine(self, dt):
+        if self.cd_timer <= 0:
+            x, y = self._target
+            possible_targets = [(x + 1, y), (x, y + 1), (x - 1, y), (x, y - 1)]
+            targets = [self._target]
+            for target_x, target_y in possible_targets:
+                if target_x < self._terrain.grid_size and target_y < self._terrain.grid_size:
+                    if self._terrain.data[target_y][target_x].type != self._terrain.terrain_types.Floor and \
+                        (target_x, target_y) in self._terrain.visible_tiles:
+                            targets.append((target_x, target_y))
+            for target in targets:
+                x, y = target
+                ore = self._terrain.data[y][x]
+                destroyed = True
+                if ore.health > 0:
+                    if target != self._target:
+                        dmg_factor = 0.1
+                    else:
+                        dmg_factor = 1
+                    destroyed = ore.take_damage(self.damage * dmg_factor)
+                try:
+                    self._terrain.ores_damaged.add((target, (ore.health / ore.max_health) * 100))
+                except ZeroDivisionError:
+                    self._terrain.ores_damaged.add((target, 0))
+                if destroyed and target == self._target:
+                    self._path = [self._target]  # Move into the mined tile
+                    self._state = "Moving"
+                    self._sub_state = "Grid Moving"
+            self.cd_timer = self.mine_cd
+        else:
+            self.cd_timer = max(0, self.cd_timer - dt)
+
+
         
         

@@ -256,20 +256,24 @@ class MinerSurface(GameSurface):
     def __init__(self):
         from src.game import Miner
         super().__init__()
-        self.sprite = self.set_sprite()
+        self.sprites = {}
         self.miners: list[Miner] = None
         self.miner_positions: dict[int: tuple[float, float]] = {}
 
     def update_miner_amount(self):
         self.miners = self._terrain._miners
 
-    def set_sprite(self):
-        surface = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA)
-
-        color = (100, 100, 10)
-        circle_size = int(gfx.TILE_SIZE / 2)
-        pg.draw.circle(surface, color, (circle_size, circle_size), circle_size - (gfx.TILE_SIZE / 4))
-        return surface
+    def get_sprite(self, miner_type: str):
+        if miner_type not in self.sprites:
+            surface = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA)
+            if miner_type == "Fire":
+                color = (200, 150 ,50)
+            elif miner_type == "Normal":
+                color = (200, 200, 5)
+            circle_size = int(gfx.TILE_SIZE / 2)
+            pg.draw.circle(surface, color, (circle_size, circle_size), circle_size - (gfx.TILE_SIZE / 4))
+            self.sprites[miner_type] = surface
+        return self.sprites[miner_type]
     
     def update_pos(self):
         for miner in self.miners:
@@ -289,8 +293,10 @@ class MinerSurface(GameSurface):
             self.static_surface.fill((0, 0, 0, 0), rect)
 
         for miner in self.miners:
+            sprite = self.get_sprite(miner.miner_type)
+
             x, y = miner.pos
-            self.static_surface.blit(self.sprite, (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE))
+            self.static_surface.blit(sprite, (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE))
 
 
     def load_new(self):
