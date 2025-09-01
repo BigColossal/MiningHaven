@@ -13,9 +13,11 @@ miner_surface = gfx.MinerSurface()
 ui_surface = gfx.UISurface()
 
 upgrade_manager = UpgradesManager(terrain)
+ui_surface.set_upgrades_manager(upgrade_manager)
+
 surfaces = [cave_surface, miner_surface, ui_surface]
 miners = []
-miner_amount = 3
+miner_amount = 10
 for i in range(miner_amount):
     miners.append(Miner(terrain))
 
@@ -45,6 +47,8 @@ def main():
         keys = pg.key.get_pressed()
         if keys[pg.K_w] or keys[pg.K_a] or keys[pg.K_s] or keys[pg.K_d]:
             graphics_engine.move_camera(keys)
+        if keys[pg.K_q]:
+            graphics_engine.switch_to_miner_UI()
 
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -52,9 +56,7 @@ def main():
 
             if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
                 mouse_pos = pg.mouse.get_pos()
-                events_handler.handle_mouse_click(mouse_pos)
-
-                
+                events_handler.handle_mouse_click(mouse_pos)              
 
             if event.type == events_handler.events.TILE_BROKEN.value:
                 for coord in event.positions:
@@ -75,8 +77,13 @@ def main():
             if event.type == events_handler.events.LUCK_UPGRADED.value:
                 upgrade_manager.increment_ore_luck(event.multiplier)
 
+            if event.type == events_handler.events.ORE_VALUE_UPGRADED.value:
+                upgrade_manager.increment_ore_value(event.multiplier)
+
             if event.type == events_handler.events.GOLD_GIVEN.value:
                 upgrade_manager.increment_gold(event.amount)
+                ui_surface.update_text("Gold Amount", f"Gold: {upgrade_manager.gold}")
+
 
         terrain.clear_ores_damaged()
         terrain.miner_decision_make(dt)

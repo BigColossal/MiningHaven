@@ -17,6 +17,8 @@ class UpgradesManager:
 
     def increment_ore_value(self, amount):
         self.ore_value *= amount
+        self.terrain.ore_value_mult = self.ore_value
+        self.terrain.create_ore_golds()
 
     def upgrade_miner_speed(self, id, amount):
         miner = self.miners[id]

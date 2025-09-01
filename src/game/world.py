@@ -14,7 +14,7 @@ class Terrain:
 
         self._miners: list[Miner] = None
 
-        self.grid_size = 100
+        self.grid_size = 50
         self.middle = None
         self.visible_tiles = None
 
@@ -25,6 +25,7 @@ class Terrain:
         self.ore_base_healths = []
         self.create_ore_healths()
         self.ore_base_golds = []
+        self.ore_value_mult = 1
         self.create_ore_golds()
         self.ores_damaged: set[tuple[tuple[int, int], float]] = set()
 
@@ -236,11 +237,11 @@ class Terrain:
         self.ore_base_healths = healths
     
     def create_ore_golds(self):
-        init_gold = 1
+        init_gold = 1 * self.ore_value_mult
         change_rate = 2.5
         golds = []
         for i in range(self._ore_amount + 1): # + 1 because of stone
-            golds.append(round(init_gold * (change_rate ** i), 1))
+            golds.append(round(init_gold * (change_rate ** i)))
 
         self.ore_base_golds = golds
 

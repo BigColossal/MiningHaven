@@ -56,8 +56,10 @@ class EventHandler:
         tile_y = int((mouse_y + self.graphics_engine.offset_y) // gfx.TILE_SIZE)
 
     def call_button_type(self, button_name):
-        if button_name == "Luck Upgrade":
+        if button_name == "Ore Luck Upgrade":
             pg.event.post(pg.event.Event(GameEvents.LUCK_UPGRADED.value, {'multiplier': 1.5}))
+        elif button_name == "Ore Value Upgrade":
+            pg.event.post(pg.event.Event(GameEvents.ORE_VALUE_UPGRADED.value, {'multiplier': 1.75}))
 
     def call_tile_broken(self, coords, new_grid=None, initialization=False, gold_amount=0):
         if isinstance(coords, tuple):

@@ -38,6 +38,11 @@ class RenderManager:
         self._shadow_visible_rect = pg.Rect(0, 0, gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT)
         self._visible_terrain = set()
 
+        self.cave_hidden = False
+        self.miner_ui_visible = False
+        self.switch_cooloff_cd = 0.35
+        self.miner_switch_timer = 0
+
     def set_renderer_to_surfaces(self):
         for surface in self.surfaces:
             surface.set_dynamic_screen(self._screen)
@@ -77,15 +82,14 @@ class RenderManager:
         self._screen.fill(color)
 
     def render(self, dt, fps):
+        self.miner_switch_timer -= dt
         if self.dirty or self.darkening or self.lightening:
             self._ui_surface.get_fps(fps)
-            self._ui_surface.update_cave_UI(dt)
+            self._ui_surface.update_UI(dt)
             self.fill(gfx.BG_COLOR)
 
             self.update_visible_rects()
-            surfaces = [(self._cave_surface.static_surface, (0, 0), self._shadow_visible_rect),
-                        (self._miner_surface.static_surface, (0, 0), self._visible_rect),
-                        (self._ui_surface.static_surface, (0, 0))]
+            surfaces = self.select_surfaces()
             
             self._screen.blits(surfaces)
             if self.darkening:
@@ -94,6 +98,15 @@ class RenderManager:
                 self.lighten_screen(dt)
             pg.display.flip()
         self.dirty = False
+
+    def select_surfaces(self):
+        surfaces = []
+        if not self.cave_hidden:
+            surfaces.append((self._cave_surface.static_surface, (0, 0), self._shadow_visible_rect))
+            surfaces.append((self._miner_surface.static_surface, (0, 0), self._visible_rect))
+        surfaces.append((self._ui_surface.static_surface, (0, 0)))
+        return surfaces
+
 
     def break_terrain(self, coord: tuple[int, int]):
         # updates the broken terrain and its surroundings
@@ -192,6 +205,18 @@ class RenderManager:
         if self.dark_alpha <= 0:
             self.lightening = False
             self.lighten_buffer_time = 0  # Reset for future use
+
+    def switch_to_miner_UI(self):
+        if self.miner_switch_timer <= 0:
+            if not self.miner_ui_visible:
+                self.cave_hidden = True
+                self.miner_ui_visible = True
+                self._ui_surface.load_miner_UI()
+            else: 
+                self.miner_ui_visible = False
+                self.cave_hidden = False
+                self._ui_surface.load_cave_UI()
+            self.miner_switch_timer = self.switch_cooloff_cd
 
 
 

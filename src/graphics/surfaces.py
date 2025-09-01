@@ -268,7 +268,7 @@ class MinerSurface(GameSurface):
 
         color = (100, 100, 10)
         circle_size = int(gfx.TILE_SIZE / 2)
-        pg.draw.circle(surface, color, (circle_size, circle_size), circle_size - 25)
+        pg.draw.circle(surface, color, (circle_size, circle_size), circle_size - (gfx.TILE_SIZE / 4))
         return surface
     
     def update_pos(self):
@@ -312,6 +312,7 @@ class UISurface(GameSurface):
         self.update_list = set()
         self.past_fps = gfx.FPS
         self.FPS = self.past_fps
+        self.filled_screen_color = (25, 25, 25)
 
     def set_upgrades_manager(self, upgrade_manager):
         self.upgrades_manager = upgrade_manager
@@ -322,16 +323,22 @@ class UISurface(GameSurface):
     def clear_update_list(self):
         self.update_list = set()
 
-    def create_button_bg(self, name: str, width: int, height: int, pos: tuple[int, int], color: tuple[int, int, int], round: bool):
+    def fill_screen(self, type: str):
+        if type == "invis":
+            self.static_surface.fill((0, 0, 0, 0))
+        elif type == "opaque":
+            self.static_surface.fill(self.filled_screen_color)
+
+    def create_button_bg(self, name: str, width: int, height: int, pos: tuple[int, int], color: tuple[int, int, int], round: bool, design=None):
         if name not in self.buttons:
-            return Button(name, width, height, pos, color, round=round)
+            return Button(name, width, height, pos, color, round=round, surface_design=design)
 
 
-    def create_text(self, name, text, pos, font, size, color, UI_height=None, updatable=False, button=False):
+    def create_text(self, name, text, pos, font, size, color, UI_height=None, center_x=None, button=False):
         font_obj = self.text_fonts.get_font(font, size)
         rendered_text = font_obj.render(text, True, color)
 
-        if updatable and not button:
+        if not button:
             self.add_to_update_list((name, False))
 
         # Center the text on the button if it exists
@@ -343,17 +350,26 @@ class UISurface(GameSurface):
             pos = (text_x, text_y)
         elif UI_height:
             pos = (pos[0], pos[1] + (UI_height / (UI_height / size)))
+        elif center_x:
+            text_rect = rendered_text.get_rect()
+            text_x = text_rect.width
+            if text_x > center_x:
+                raise Exception(f"text \"{text}\" is too large for the given size to center the text in")
+            else:
+                text_x = pos[0] + (center_x - text_x) / 2
+                pos = (text_x, pos[1])
 
         return (rendered_text, pos)
 
-    def create_button(self, name, text, font, text_size, text_color, height, width, x, y, background_color, rounded):
+    def create_button(self, name, text, font, text_size, text_color, height, width, x, y, background_color, rounded, design=None):
         self.buttons[name] = self.create_button_bg(name, width, height,
                             (x, y),
-                            background_color, rounded)
-        self.text[name] = self.create_text(name, text, 
-                        (x, y),
-                        font, text_size, 
-                        text_color, button=True)
+                            background_color, rounded, design)
+        if text:
+            self.text[name] = self.create_text(name, text, 
+                            (x, y),
+                            font, text_size, 
+                            text_color, button=True)
         
         self.add_to_update_list((name, True))
 
@@ -361,22 +377,72 @@ class UISurface(GameSurface):
     def load_cave_UI(self):
         self.buttons = {}
         self.clear_update_list()
-        self.create_button(name="Luck Upgrade", text="Upgrade Luck", font="ubuntu", text_size=24, 
+        self.fill_screen("invis")
+        self.create_button(name="Ore Luck Upgrade", text="Upgrade Luck", font="ubuntu", text_size=24, 
                            text_color=(200, 255, 200), height=50, width=150,x=15, 
                            y=gfx.SCREEN_HEIGHT - 65, background_color=(0, 0, 0), rounded=True)
+        self.create_button(name="Ore Value Upgrade", text="Upgrade Value", font="ubuntu", text_size=24, 
+                           text_color=(200, 255, 200), height=50, width=165,x=190, 
+                           y=gfx.SCREEN_HEIGHT - 65, background_color=(0, 0, 0), rounded=True)
         
+        gold_amount = self.upgrades_manager.gold
+        self.text["Gold Amount"] = self.create_text(name="Gold Amount", text=f"Gold: {gold_amount}", 
+                                                    pos=(gfx.SCREEN_WIDTH - 200, 15), font="ubuntu", size=24,
+                                                    color=(200, 255, 200))
         
+        self._terrain._event_handler.set_buttons(self.buttons)
+        
+    def load_miner_UI(self):
+        self.buttons = {}
+        self.clear_update_list()
+        self.fill_screen("opaque")
+        max_miners = 20
+        miner_box_length = 200
+        x_distance, y_distance = 300, 250
+        cols = 5
+        rows = 4
+        x_padding = (gfx.SCREEN_WIDTH - (cols * miner_box_length) - ((x_distance - miner_box_length) * (cols - 1))) / 2
+        y_padding = (gfx.SCREEN_HEIGHT - (rows * miner_box_length) - ((y_distance - miner_box_length) * (rows - 1))) / 2
+        x, y = x_padding, y_padding
+
+        miner_sprite = pg.Surface((miner_box_length, miner_box_length), pg.SRCALPHA)
+        pg.draw.circle(miner_sprite, (100, 100, 10), 
+                           (int(miner_box_length / 2), int(miner_box_length / 2)), int(miner_box_length / 2) - 25)
+
+        for i in range(max_miners):
+            col = i % cols
+            row = i // cols
+
+            x = x_padding + col * x_distance
+            y = y_padding + row * y_distance
+
+            self.create_button(
+                name=f"Miner {i + 1} Upgrades",
+                text=None, font=None, text_size=None, text_color=None,
+                height=miner_box_length, width=miner_box_length,
+                x=x, y=y,
+                background_color=(10, 10, 10), rounded=True, design=miner_sprite
+            )
+            self.text[f"Miner {i + 1} title"] = self.create_text(name=f"Miner {i + 1} title", text=f"Miner {i + 1}",  
+                                            pos=(x, y + miner_box_length), font="ubuntu", size=24, 
+                                            color=(200, 255, 200), center_x=miner_box_length)
+
+
         self._terrain._event_handler.set_buttons(self.buttons)
 
     def get_fps(self, FPS):
         self.past_fps = FPS
         self.FPS = int(FPS)
         if self.FPS <= self.past_fps + 2 or self.FPS >= self.past_fps + 2:
-            self.text["FPS"] = self.create_text(name="FPS", text=f"fps {self.FPS}", pos=(0, 0), 
-                            font="ubuntu", size=40, color=(120, 225, 120), updatable=True)
-            self.add_to_update_list(("FPS", False))
+            self.update_text("FPS", f"fps {self.FPS}", pos=(0, 0), size=40)
 
-    def update_cave_UI(self, dt):
+    def update_text(self, name, new_text, pos=None, size=24, color=(200, 255, 200)):
+        if not pos:
+            _, pos = self.text[name]
+        self.text[name] = self.create_text(name=name, text=new_text, pos=pos, font="ubuntu", size=size,
+                                           color=color)
+
+    def update_UI(self, dt):
         self.cd_time -= dt
         if self.cd_time <= 0:
             for name, button in self.update_list:
@@ -384,12 +450,15 @@ class UISurface(GameSurface):
                     # render button background
                     self.buttons[name].render(self.static_surface)
                 # render text
-                text, pos = self.text[name]
-                width, height = text.get_width(), text.get_height()
-                text_area = pg.Rect(pos[0], pos[1], width, height)
-                self.static_surface.fill((0, 0, 0, 0), text_area) # erase area
-
-                self.static_surface.blit(text, pos)
+                text = None
+                if name in self.text:
+                    text, pos = self.text[name]
+                    width, height = text.get_width(), text.get_height()
+                    text_area = pg.Rect(pos[0], pos[1], width, height)
+                if not button:
+                    self.static_surface.fill((0, 0, 0, 0), text_area) # erase area
+                if text:
+                    self.static_surface.blit(text, pos)
 
             self.clear_update_list()
             self.cd_time = self.update_cd
@@ -398,14 +467,14 @@ class UISurface(GameSurface):
     def load_new(self):
         self.create_static_surface()
         self.load_cave_UI()
-        self.update_cave_UI(0)
+        self.update_UI(0)
 
     def create_static_surface(self):
         self.static_surface = pg.Surface((gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT), pg.SRCALPHA).convert_alpha()
 
 
 class Button():
-    def __init__(self, name, width, height, pos, color, round):
+    def __init__(self, name, width, height, pos, color, round, surface_design=None):
         self.name = name
         self.width = width
         self.height = height
@@ -413,9 +482,13 @@ class Button():
         self.color = color
         self.round_radius = 10 if round else 0
         self.rect = pg.Rect(pos[0], pos[1], width, height)
+        self.surface_design = surface_design
 
     def render(self, surface):
-        return pg.draw.rect(surface, self.color, self.rect, border_radius=self.round_radius)
+        rect = pg.draw.rect(surface, self.color, self.rect, border_radius=self.round_radius)
+        if self.surface_design:
+            surface.blit(self.surface_design, self.pos)
+        return rect
 
     def collidepoint(self, *args):
         return self.rect.collidepoint(*args)
