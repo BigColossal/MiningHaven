@@ -24,7 +24,9 @@ class Ore:
         return destroyed
 
     def check_status(self) -> bool:
-        if self.health <= 0 and not self.destroyed:
+        if self.destroyed:
+            return True
+        if self.health <= 0:
             self.event_handler.call_tile_broken(self.pos, gold_amount=self.gold)
             self.destroyed = True
             return True

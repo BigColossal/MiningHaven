@@ -202,7 +202,13 @@ class CaveSurface(GameSurface):
 
             # Fill (e.g., green) — scaled to health percentage
             fill_width = int(gfx.TILE_SIZE * (health_percent / 100))
-            pg.draw.rect(self.static_surface, (0, 255, 0, transparency), ((x + self.padding) * gfx.TILE_SIZE, (y + self.padding) * gfx.TILE_SIZE, fill_width, 10))
+            if health_percent > 50:
+                color = (0, 255, 0)
+            elif health_percent > 15:
+                color = (150, 150, 15)
+            else:
+                color = (225, 0, 0)
+            pg.draw.rect(self.static_surface, (*color, transparency), ((x + self.padding) * gfx.TILE_SIZE, (y + self.padding) * gfx.TILE_SIZE, fill_width, 10))
         elif health_percent <= 0 or timer <= 0:
             self.ores_damaged.discard(coord)
             if health_percent > 0:
@@ -469,22 +475,29 @@ class UISurface(GameSurface):
     def update_UI(self, dt):
         self.cd_time -= dt
         if self.cd_time <= 0:
+            to_be_updated = []
             for name, button in self.update_list:
                 if button:
                     # render button background
-                    self.buttons[name].render(self.static_surface)
+                    try:
+                        self.buttons[name].render(self.static_surface)
+                    except: # name not found in buttons
+                        to_be_updated.append(name)
                 # render text
-                text = None
-                if name in self.text:
-                    text, pos = self.text[name]
-                    width, height = text.get_width(), text.get_height()
-                    text_area = pg.Rect(pos[0], pos[1], width, height)
-                if not button:
-                    self.static_surface.fill((0, 0, 0, 0), text_area) # erase area
-                if text:
-                    self.static_surface.blit(text, pos)
+                if name not in to_be_updated:
+                    text = None
+                    if name in self.text:
+                        text, pos = self.text[name]
+                        width, height = text.get_width(), text.get_height()
+                        text_area = pg.Rect(pos[0], pos[1], width, height)
+                    if not button:
+                        self.static_surface.fill((0, 0, 0, 0), text_area) # erase area
+                    if text:
+                        self.static_surface.blit(text, pos)
 
             self.clear_update_list()
+            for button in to_be_updated: # Add it on pending list for when name is found in buttons, to update
+                self.add_to_update_list((button, True))
             self.cd_time = self.update_cd
             
 

@@ -26,8 +26,8 @@ class Miner():
         self.passive_active_chance = 0.3
 
     def set_boost(self):
-        self.movement_speed = self.base_movement_speed * Miner.global_miner_speed_boost
-        self.mine_cd = self.mine_cd / Miner.global_miner_speed_boost
+        self.movement_speed = round(self.base_movement_speed * Miner.global_miner_speed_boost, 3)
+        self.mine_cd = round(self.base_mine_cd / Miner.global_miner_speed_boost, 3)
 
     def spawn_miner(self):
         cave_mid = (self._terrain.middle, self._terrain.middle)

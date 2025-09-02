@@ -8,7 +8,10 @@ class UpgradesManager:
         self.terrain: Terrain = terrain
         self.miner_speed_click_increase = 0.1
         self.miner_speed_boost_limit = 5
-        self.miner_speed_boost_decay = 0.01
+        self.miner_speed_boost_decay = 0.15
+        self.time_since_last_click = 0
+        self.decay_rate = 0.025
+        self.decay_rate_timer = self.decay_rate
 
     def increment_gold(self, amount):
         self.gold += amount
@@ -45,12 +48,21 @@ class UpgradesManager:
         from src.game import Miner
 
         Miner.global_miner_speed_boost = min(Miner.global_miner_speed_boost + self.miner_speed_click_increase, self.miner_speed_boost_limit)
+        self.time_since_last_click = 0
         for miner in self.miners:
             miner.set_boost()
 
-    def global_miner_speed_decay(self):
+    def incre_time_since_last(self, dt):
+        self.time_since_last_click += dt
+
+    def global_miner_speed_decay(self, dt):
         from src.game import Miner
 
-        Miner.global_miner_speed_boost = max(1, Miner.global_miner_speed_boost - self.miner_speed_boost_decay)
+        self.decay_rate_timer -= dt
+        if self.decay_rate_timer <= 0 and Miner.global_miner_speed_boost != 1:
+            Miner.global_miner_speed_boost = max(1, Miner.global_miner_speed_boost - self.miner_speed_boost_decay)
+            self.decay_rate_timer = 0.1
+            for miner in self.miners:
+                miner.set_boost()
 
     

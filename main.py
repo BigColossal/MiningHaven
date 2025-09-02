@@ -96,6 +96,10 @@ def main():
                 upgrade_manager.incre_global_miner_speed_mult()
                 ui_surface.update_text("Miner Boost", f"Current Boost: {round(Miner.global_miner_speed_boost, 3)}x", color=(255, 255, 255), button=True)
 
+        upgrade_manager.incre_time_since_last(dt)
+        if upgrade_manager.time_since_last_click >= 1.5:
+            upgrade_manager.global_miner_speed_decay(dt)
+            ui_surface.update_text("Miner Boost", f"Current Boost: {round(Miner.global_miner_speed_boost, 3)}x", color=(255, 255, 255), button=True)
 
         terrain.miner_decision_make(dt)
         graphics_engine.update_healthbars(dt)
