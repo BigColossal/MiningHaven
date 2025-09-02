@@ -278,7 +278,7 @@ class MinerSurface(GameSurface):
         if miner_type not in self.sprites:
             surface = pg.Surface((gfx.TILE_SIZE, gfx.TILE_SIZE), pg.SRCALPHA)
             if miner_type == "Fire":
-                color = (200, 150 ,50)
+                color = (128, 0 ,0)
             elif miner_type == "Lightning":
                 color = (200, 200, 5)
             circle_size = int(gfx.TILE_SIZE / 2)
@@ -509,5 +509,77 @@ class Button():
 
     def collidepoint(self, *args):
         return self.rect.collidepoint(*args)
+    
+class SpecialEffectSurface(GameSurface):
+
+    def __init__(self):
+        super().__init__()
+        self.fire_effect_cd: float = 0.25
+        self.fire_tiles: dict[tuple[int, int]: float] = {}
+
+        self.electricity_effect_cd: float = 0.25
+        self.electricity_tiles: dict[tuple[int, int]: float] = {}
+
+    def get_fill_rect(self, x, y):
+        return (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE, gfx.TILE_SIZE, gfx.TILE_SIZE)
+
+    def animate_fire(self, dt, coords=[], updating=False):
+        for coord in coords:
+            self.fire_tiles[coord] = self.fire_effect_cd
+        
+        if updating:
+            tiles_to_remove = []
+            for key in self.fire_tiles.keys():
+                self.fire_tiles[key] -= dt
+                if self.fire_tiles[key] <= 0:
+                    tiles_to_remove.append(key)
+
+            for key in tiles_to_remove:
+                x, y = key
+                self.static_surface.fill((0, 0, 0, 0), self.get_fill_rect(x, y))
+                del self.fire_tiles[key]
+
+        for coord, timer in self.fire_tiles.items():
+            x, y = coord
+            transparency = 255
+            if timer <= 0:
+                break
+            elif timer < self.fire_effect_cd / 2:
+                transparency = min(timer * 10, 1) * 255
+            color = (255, 0, 0, transparency)
+
+            self.static_surface.fill(color, self.get_fill_rect(x, y))
+
+    def animate_electricity(self, dt, coords=[], updating=False):
+        for coord in coords:
+            self.electricity_tiles[coord] = self.electricity_effect_cd
+        
+        if updating:
+            tiles_to_remove = []
+            for key in self.electricity_tiles.keys():
+                self.electricity_tiles[key] -= dt
+                if self.electricity_tiles[key] <= 0:
+                    tiles_to_remove.append(key)
+
+            for key in tiles_to_remove:
+                x, y = key
+                self.static_surface.fill((0, 0, 0, 0), self.get_fill_rect(x, y))
+                del self.electricity_tiles[key]
+
+        for coord, timer in self.electricity_tiles.items():
+            x, y = coord
+            transparency = 255
+            if timer <= 0:
+                break
+            elif timer < self.electricity_effect_cd / 2:
+                transparency = min(timer * 10, 1) * 255
+            color = (255, 255, 0, transparency)
+
+            self.static_surface.fill(color, self.get_fill_rect(x, y))
+
+    def load_new(self):
+        self.create_static_surface()
+
+    
 
         

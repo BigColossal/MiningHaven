@@ -162,21 +162,38 @@ class Miner():
         ydir *= 0.25
         return [(x + xdir, y + ydir)]
     
+    def passive_chance_roll(self):
+        import random
+        chance = random.random()
+        if chance <= self.passive_active_chance:
+            return True
+        return False
+    
 class FireMiner(Miner):
     def __init__(self, terrain):
         super().__init__(terrain)
         self.miner_type = "Fire"
+        self.passive_active_chance = 0.3
+
+    def activate_passive_ability(self):
+        x, y = self._target
+        possible_targets = [(x + 1, y), (x, y + 1), (x - 1, y), (x, y - 1)]
+        targets = [self._target]
+        for target_x, target_y in possible_targets:
+            if target_x < self._terrain.grid_size and target_y < self._terrain.grid_size:
+                if self._terrain.data[target_y][target_x].type != self._terrain.terrain_types.Floor and \
+                    (target_x, target_y) in self._terrain.visible_tiles:
+                        targets.insert(0, (target_x, target_y))
+
+        return targets
 
     def mine(self, dt):
         if self.cd_timer <= 0:
-            x, y = self._target
-            possible_targets = [(x + 1, y), (x, y + 1), (x - 1, y), (x, y - 1)]
-            targets = [self._target]
-            for target_x, target_y in possible_targets:
-                if target_x < self._terrain.grid_size and target_y < self._terrain.grid_size:
-                    if self._terrain.data[target_y][target_x].type != self._terrain.terrain_types.Floor and \
-                        (target_x, target_y) in self._terrain.visible_tiles:
-                            targets.insert(0, (target_x, target_y))
+            if self.passive_chance_roll():
+                targets = self.activate_passive_ability()
+            else:
+                targets = [self._target]
+
             for target in targets:
                 x, y = target
                 ore = self._terrain.data[y][x]
@@ -191,7 +208,9 @@ class FireMiner(Miner):
                     self._terrain.ores_damaged[target] = ((ore.health / ore.max_health) * 100, 2.5)
                 except ZeroDivisionError:
                     self._terrain.ores_damaged[target] = ((0, 0.0))
-            
+                    
+            self._terrain._special_gfx_surface.animate_fire(dt, coords=targets)
+
             target_x, target_y = self._target
             if self._terrain.data[target_y][target_x].health <= 0:
                 self._path = [self._target]  # Move into the mined tile
@@ -205,10 +224,15 @@ class LightningMiner(Miner):
     def __init__(self, terrain):
         super().__init__(terrain)
         self.miner_type = "Lightning"
+        self.passive_active_chance = 0.3
 
     def mine(self, dt):
         if self.cd_timer <= 0:
-            path = self.get_chain_path()
+            if self.passive_chance_roll():
+                path = self.get_chain_path()
+            else:
+                path = [self._target]
+
             for target in path:
                 x, y = target
                 ore = self._terrain.data[y][x]
@@ -224,6 +248,8 @@ class LightningMiner(Miner):
                 except ZeroDivisionError:
                     self._terrain.ores_damaged[target] = ((0, 0.0))
 
+            self._terrain._special_gfx_surface.animate_electricity(dt, coords=path)
+
             target_x, target_y = self._target
             if self._terrain.data[target_y][target_x].health <= 0:
                 self._path = [self._target]  # Move into the mined tile
@@ -233,53 +259,50 @@ class LightningMiner(Miner):
         else:
             self.cd_timer = max(0, self.cd_timer - dt)
 
+    
     def get_chain_path(self):
-        from collections import deque
         visited = set()
-        path = []
-        queue = deque()
-        queue.append(self._target)  # Start from the target ore
-        ore_limit = 4
+        best_path = []
 
-        while queue and len(path) < ore_limit:
-            current_pos = queue.popleft()
-            x, y = current_pos
+        def dfs(pos, current_path):
+            nonlocal best_path
+            x, y = pos
 
-            if current_pos in visited:
-                continue
-            visited.add(current_pos)
+            if pos in visited:
+                return
+            visited.add(pos)
 
-            # Skip if it's a floor tile
-            if self._terrain.data[y][x].type == self._terrain.terrain_types.Floor or (x, y) not in self._terrain.visible_tiles:
-                continue
+            # Skip if it's a floor tile or not visible
+            if self._terrain.data[y][x].type == self._terrain.terrain_types.Floor or pos not in self._terrain.visible_tiles:
+                visited.remove(pos)
+                return
 
-            """# Check adjacency to existing path
-            is_adjacent = any(
-                abs(x - px) + abs(y - py) == 1
-                for px, py in path
-            )
-            if not is_adjacent and path:
-                continue  # Only add if adjacent to something already in path"""
-            if not path or abs(x - path[-1][0]) + abs(y - path[-1][1]) == 1:
-                path.insert(0, current_pos)
+            # Enforce adjacency
+            if not current_path or abs(x - current_path[-1][0]) + abs(y - current_path[-1][1]) == 1:
+                current_path.append(pos)
 
-                import random
+                # Update best path if longer
+                if len(current_path) > len(best_path):
+                    best_path = current_path.copy()
 
-                # Define directions (up, down, left, right)
+                # Stop if max length reached
+                if len(current_path) == 4:
+                    visited.remove(pos)
+                    current_path.pop()
+                    return
+
+                # Explore neighbors
                 directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-                random.shuffle(directions)  # Randomize the order
+                import random
+                random.shuffle(directions)
 
-                # Explore neighbors (up, down, left, right)
                 for dx, dy in directions:
                     nx, ny = x + dx, y + dy
-                    if (
-                        0 <= nx < self._terrain.grid_size and
-                        0 <= ny < self._terrain.grid_size and
-                        (nx, ny) not in visited
-                    ):
-                        queue.append((nx, ny))
+                    if 0 <= nx < self._terrain.grid_size and 0 <= ny < self._terrain.grid_size:
+                        dfs((nx, ny), current_path)
 
-        return path
+                current_path.pop()  # Backtrack
+            visited.remove(pos)
 
-        
-        
+        dfs(self._target, [])
+        return best_path

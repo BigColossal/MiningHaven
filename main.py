@@ -11,11 +11,12 @@ terrain = Terrain()
 cave_surface = gfx.CaveSurface()
 miner_surface = gfx.MinerSurface()
 ui_surface = gfx.UISurface()
+special_gfx_surface = gfx.SpecialEffectSurface()
 
 upgrade_manager = UpgradesManager(terrain)
 ui_surface.set_upgrades_manager(upgrade_manager)
 
-surfaces = [cave_surface, miner_surface, ui_surface]
+surfaces = [cave_surface, miner_surface, ui_surface, special_gfx_surface]
 miners = []
 lightning_miner_amount = 10
 fire_miner_amount = 10
@@ -28,6 +29,7 @@ for i in range(lightning_miner_amount):
 terrain.set_cave_surface(cave_surface)
 terrain.set_miner_surface(miner_surface)
 terrain.set_ui_surface(ui_surface)
+terrain.set_special_gfx_surface(special_gfx_surface)
 terrain.set_miners(miners)
 for surface in surfaces:
     surface.set_terrain(terrain)

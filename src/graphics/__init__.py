@@ -1,6 +1,6 @@
 from .render_manager import RenderManager
 from .sprite_extraction import extract_sprites, GameSprites
-from .surfaces import CaveSurface, MinerSurface, UISurface
+from .surfaces import CaveSurface, MinerSurface, UISurface, SpecialEffectSurface
 from .text import TextHandler, FPSCounter
 
 SCREEN_WIDTH = 1920

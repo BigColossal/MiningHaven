@@ -8,6 +8,7 @@ class Terrain:
         self._cave_surface: gfx.CaveSurface = None
         self._miner_surface: gfx.MinerSurface = None
         self._ui_surface: gfx.UISurface = None
+        self._special_gfx_surface: gfx.SpecialEffectSurface = None
         self._event_handler: EventHandler = None
 
         self.data = []
@@ -164,6 +165,9 @@ class Terrain:
 
     def set_ui_surface(self, ui_surface):
         self._ui_surface = ui_surface
+
+    def set_special_gfx_surface(self, gfx_surface):
+        self._special_gfx_surface = gfx_surface
 
     def wipe_terrain_data(self):
         self.data = []

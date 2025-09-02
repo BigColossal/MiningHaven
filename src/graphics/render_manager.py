@@ -14,7 +14,8 @@ class RenderManager:
         self._cave_surface: gfx.CaveSurface = self._terrain._cave_surface
         self._miner_surface: gfx.MinerSurface = self._terrain._miner_surface
         self._ui_surface: gfx.UISurface = self._terrain._ui_surface
-        self.surfaces = [self._cave_surface, self._miner_surface, self._ui_surface]
+        self._special_gfx_surface: gfx.SpecialEffectSurface = self._terrain._special_gfx_surface
+        self.surfaces = [self._cave_surface, self._miner_surface, self._ui_surface, self._terrain._special_gfx_surface]
         self._cave_surface.set_game_sprites(self._GAME_SPRITES)
 
         self.map_height, self.map_width = None, None
@@ -41,7 +42,7 @@ class RenderManager:
 
         self.cave_hidden = False
         self.miner_ui_visible = False
-        self.switch_cooloff_cd = 0.35
+        self.ui_switch_cooloff_cd = 0.35
         self.miner_switch_timer = 0
 
     def set_renderer_to_surfaces(self):
@@ -80,6 +81,11 @@ class RenderManager:
 
     def render(self, dt, fps):
         self.miner_switch_timer -= dt
+        if self._special_gfx_surface.fire_tiles:
+            self._special_gfx_surface.animate_fire(dt, updating=True)
+        if self._special_gfx_surface.electricity_tiles:
+            self._special_gfx_surface.animate_electricity(dt, updating=True)
+
         if self.dirty or self.darkening or self.lightening:
             self._ui_surface.get_fps(fps)
             self._ui_surface.update_UI(dt)
@@ -100,6 +106,7 @@ class RenderManager:
         surfaces = []
         if not self.cave_hidden:
             surfaces.append((self._cave_surface.static_surface, (0, 0), self._shadow_visible_rect))
+            surfaces.append((self._special_gfx_surface.static_surface, (0, 0), self._visible_rect))
             surfaces.append((self._miner_surface.static_surface, (0, 0), self._visible_rect))
         surfaces.append((self._ui_surface.static_surface, (0, 0)))
         return surfaces
@@ -218,7 +225,7 @@ class RenderManager:
                 self.miner_ui_visible = False
                 self.cave_hidden = False
                 self._ui_surface.load_cave_UI()
-            self.miner_switch_timer = self.switch_cooloff_cd
+            self.miner_switch_timer = self.ui_switch_cooloff_cd
 
 
 
