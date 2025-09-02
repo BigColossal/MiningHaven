@@ -16,6 +16,7 @@ class Ore:
         self.gold: int = gold
         self.pos = pos
         self.event_handler: EventHandler = event_handler
+        self.destroyed = False
 
     def take_damage(self, damage) -> bool:
         self.health -= damage
@@ -23,7 +24,8 @@ class Ore:
         return destroyed
 
     def check_status(self) -> bool:
-        if self.health <= 0:
+        if self.health <= 0 and not self.destroyed:
             self.event_handler.call_tile_broken(self.pos, gold_amount=self.gold)
+            self.destroyed = True
             return True
         return False

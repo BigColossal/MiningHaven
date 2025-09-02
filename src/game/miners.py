@@ -2,6 +2,7 @@ import pygame as pg
 
 class Miner():
     miner_amount = 0
+    global_miner_speed_boost = 1
     def __init__(self, terrain):
         from src.game import Terrain
         Miner.miner_amount += 1
@@ -14,11 +15,19 @@ class Miner():
         self._path = None
         self._target = (None, None)
 
-        self.movement_speed = 10
-        self.mine_cd = 0.075
+        self.base_movement_speed = 10
+        self.base_mine_cd = 0.5
+        self.movement_speed = self.base_movement_speed
+        self.mine_cd = self.base_mine_cd
+
         self.cd_timer = self.mine_cd
         self.damage = 35
         self.miner_type = "Normal"
+        self.passive_active_chance = 0.3
+
+    def set_boost(self):
+        self.movement_speed = self.base_movement_speed * Miner.global_miner_speed_boost
+        self.mine_cd = self.mine_cd / Miner.global_miner_speed_boost
 
     def spawn_miner(self):
         cave_mid = (self._terrain.middle, self._terrain.middle)

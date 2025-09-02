@@ -174,13 +174,14 @@ class Terrain:
 
     def break_terrain(self, coord: tuple[int, int], initialization: bool, imported_grid=None):
         from src.game import Ore
+        x, y = coord
         if imported_grid:
             grid = imported_grid
         else:
             grid = self.data
         if self.tile_amount > 0:
-            self.tile_amount -= 1
-        x, y = coord
+            if grid[y][x].type != self.terrain_types.Floor:
+                self.tile_amount -= 1
         grid[y][x] = Ore(self.terrain_types.Floor, 0, 0, (x, y), self._event_handler)
         self.visible_tiles.add(coord)
         self._cave_helper.check_if_in_cave((x, y))

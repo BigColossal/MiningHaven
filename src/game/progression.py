@@ -6,9 +6,15 @@ class UpgradesManager:
         self.ore_value = ore_value
         self.miners: dict[int: Miner] = None
         self.terrain: Terrain = terrain
+        self.miner_speed_click_increase = 0.1
+        self.miner_speed_boost_limit = 5
+        self.miner_speed_boost_decay = 0.01
 
     def increment_gold(self, amount):
         self.gold += amount
+
+    def set_miners(self, miners):
+        self.miners = miners
 
     def increment_ore_luck(self, amount):
         self.ore_luck *= amount
@@ -21,15 +27,30 @@ class UpgradesManager:
         self.terrain.create_ore_golds()
 
     def upgrade_miner_speed(self, id, amount):
-        miner = self.miners[id]
+        from src.game import Miner
+        miner: Miner = self.miners[id]
         miner.movement_speed += amount
 
     def upgrade_pickaxe_strength(self, id, amount):
-        miner = self.miners[id]
+        from src.game import Miner
+        miner: Miner = self.miners[id]
         miner.damage *= amount
 
     def upgrade_miner_pickaxe_speed(self, id, amount):
-        miner = self.miners[id]
+        from src.game import Miner
+        miner: Miner = self.miners[id]
         miner.mine_cd -= amount
+
+    def incre_global_miner_speed_mult(self):
+        from src.game import Miner
+
+        Miner.global_miner_speed_boost = min(Miner.global_miner_speed_boost + self.miner_speed_click_increase, self.miner_speed_boost_limit)
+        for miner in self.miners:
+            miner.set_boost()
+
+    def global_miner_speed_decay(self):
+        from src.game import Miner
+
+        Miner.global_miner_speed_boost = max(1, Miner.global_miner_speed_boost - self.miner_speed_boost_decay)
 
     

@@ -26,6 +26,8 @@ for i in range(fire_miner_amount):
 for i in range(lightning_miner_amount):
     miners.append(LightningMiner(terrain))
 
+upgrade_manager.set_miners(miners)
+
 terrain.set_cave_surface(cave_surface)
 terrain.set_miner_surface(miner_surface)
 terrain.set_ui_surface(ui_surface)
@@ -89,6 +91,11 @@ def main():
             if event.type == events_handler.events.GOLD_GIVEN.value:
                 upgrade_manager.increment_gold(event.amount)
                 ui_surface.update_text("Gold Amount", f"Gold: {upgrade_manager.gold}")
+
+            if event.type == events_handler.events.MINER_BOOST_CLICKED.value:
+                upgrade_manager.incre_global_miner_speed_mult()
+                ui_surface.update_text("Miner Boost", f"Current Boost: {round(Miner.global_miner_speed_boost, 3)}x", color=(255, 255, 255), button=True)
+
 
         terrain.miner_decision_make(dt)
         graphics_engine.update_healthbars(dt)

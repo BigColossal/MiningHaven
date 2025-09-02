@@ -386,12 +386,13 @@ class UISurface(GameSurface):
             self.text[name] = self.create_text(name, text, 
                             (x, y),
                             font, text_size, 
-                            text_color, button=True)
+                            text_color, center_x=True, button=True)
         
         self.add_to_update_list((name, True))
 
 
     def load_cave_UI(self):
+        from src.game import Miner
         self.buttons = {}
         self.clear_update_list()
         self.fill_screen("invis")
@@ -401,6 +402,10 @@ class UISurface(GameSurface):
         self.create_button(name="Ore Value Upgrade", text="Upgrade Value", font="ubuntu", text_size=24, 
                            text_color=(200, 255, 200), height=50, width=165,x=190, 
                            y=gfx.SCREEN_HEIGHT - 65, background_color=(0, 0, 0), rounded=True)
+        
+        self.create_button(name="Miner Boost", text=f"Current Boost: {round(Miner.global_miner_speed_boost, 3)}x", font="ubuntu", text_size=24,
+                           text_color=(255, 255, 255), height=50, width=250, x=gfx.SCREEN_WIDTH / 2, 
+                           y=gfx.SCREEN_HEIGHT - 100, background_color=(10, 10, 10), rounded=True)
         
         gold_amount = self.upgrades_manager.gold
         self.text["Gold Amount"] = self.create_text(name="Gold Amount", text=f"Gold: {gold_amount}", 
@@ -453,11 +458,13 @@ class UISurface(GameSurface):
         if self.FPS <= self.past_fps + 2 or self.FPS >= self.past_fps + 2:
             self.update_text("FPS", f"fps {self.FPS}", pos=(0, 0), size=40)
 
-    def update_text(self, name, new_text, pos=None, size=24, color=(200, 255, 200)):
+    def update_text(self, name, new_text, pos=None, size=24, color=(200, 255, 200), button=False):
         if not pos:
             _, pos = self.text[name]
         self.text[name] = self.create_text(name=name, text=new_text, pos=pos, font="ubuntu", size=size,
-                                           color=color)
+                                           color=color, button=button)
+        if button:
+            self.add_to_update_list((name, button))
 
     def update_UI(self, dt):
         self.cd_time -= dt

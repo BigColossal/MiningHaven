@@ -19,6 +19,7 @@ class GameEvents(Enum):
     CAVE_CLEARED = pg.USEREVENT + 5
     LUCK_UPGRADED = pg.USEREVENT + 6
     ORE_VALUE_UPGRADED = pg.USEREVENT + 7
+    MINER_BOOST_CLICKED = pg.USEREVENT + 8
 
 class EventHandler:
     def __init__(self, graphics_engine, terrain):
@@ -60,6 +61,8 @@ class EventHandler:
             pg.event.post(pg.event.Event(GameEvents.LUCK_UPGRADED.value, {'multiplier': 1.5}))
         elif button_name == "Ore Value Upgrade":
             pg.event.post(pg.event.Event(GameEvents.ORE_VALUE_UPGRADED.value, {'multiplier': 1.75}))
+        elif button_name == "Miner Boost":
+            pg.event.post(pg.event.Event(GameEvents.MINER_BOOST_CLICKED.value))
 
     def call_tile_broken(self, coords, new_grid=None, initialization=False, gold_amount=0):
         if isinstance(coords, tuple):
