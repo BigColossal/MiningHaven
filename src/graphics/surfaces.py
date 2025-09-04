@@ -336,6 +336,8 @@ class UISurface(GameSurface):
         self.past_fps = gfx.FPS
         self.FPS = self.past_fps
         self.filled_screen_color = (25, 25, 25)
+        self.ore_panel = None
+        self.ore_hover_active = True
 
     def set_upgrades_manager(self, upgrade_manager):
         self.upgrades_manager = upgrade_manager
@@ -345,6 +347,9 @@ class UISurface(GameSurface):
 
     def clear_update_list(self):
         self.update_list = set()
+
+    def create_ore_panel(self, terrain):
+        self.ore_panel = OrePanel(terrain, self)
 
     def fill_screen(self, type: str):
         if type == "invis":
@@ -399,7 +404,9 @@ class UISurface(GameSurface):
 
     def load_cave_UI(self):
         from src.game import Miner
+        self.ore_hover_active = True
         self.buttons = {}
+        self.text = {}
         self.clear_update_list()
         self.fill_screen("invis")
         self.create_button(name="Ore Luck Upgrade", text="Upgrade Luck", font="ubuntu", text_size=24, 
@@ -421,8 +428,11 @@ class UISurface(GameSurface):
         self._terrain._event_handler.set_buttons(self.buttons)
         
     def load_miner_UI(self):
+        self.ore_hover_active = False
         self.buttons = {}
+        self.text = {}
         self.clear_update_list()
+        self.erase_ore_panel()
         self.fill_screen("opaque")
         max_miners = 20
         miner_box_length = 200
@@ -466,15 +476,20 @@ class UISurface(GameSurface):
 
     def update_text(self, name, new_text, pos=None, size=24, color=(200, 255, 200), button=False):
         if not pos:
-            _, pos = self.text[name]
+            try:
+                _, pos = self.text[name]
+            except KeyError:
+                pass
+
         self.text[name] = self.create_text(name=name, text=new_text, pos=pos, font="ubuntu", size=size,
                                            color=color, button=button)
+    
         if button:
             self.add_to_update_list((name, button))
 
-    def update_UI(self, dt):
+    def update_UI(self, dt=0, bypass_dt=False):
         self.cd_time -= dt
-        if self.cd_time <= 0:
+        if self.cd_time <= 0 or bypass_dt:
             to_be_updated = []
             for name, button in self.update_list:
                 if button:
@@ -487,11 +502,18 @@ class UISurface(GameSurface):
                 if name not in to_be_updated:
                     text = None
                     if name in self.text:
-                        text, pos = self.text[name]
-                        width, height = text.get_width(), text.get_height()
-                        text_area = pg.Rect(pos[0], pos[1], width, height)
+                        try:
+                            text, pos = self.text[name]
+                            width, height = text.get_width(), text.get_height()
+                            text_area = pg.Rect(pos[0], pos[1], width, height)
+                        except TypeError:
+                            del self.text[name]
+                            continue
                     if not button:
-                        self.static_surface.fill((0, 0, 0, 0), text_area) # erase area
+                        try:
+                            self.static_surface.fill((0, 0, 0, 0), text_area) # erase area
+                        except:
+                            continue
                     if text:
                         self.static_surface.blit(text, pos)
 
@@ -499,6 +521,41 @@ class UISurface(GameSurface):
             for button in to_be_updated: # Add it on pending list for when name is found in buttons, to update
                 self.add_to_update_list((button, True))
             self.cd_time = self.update_cd
+
+    def update_ore_panel(self, coord, ore):
+        if self.ore_hover_active:
+            if ore != self.ore_panel.ore:
+                self.ore_panel.set_ore(ore)
+                self.ore_panel.update_panel()
+
+            if coord != self.ore_panel.pos:
+                self.erase_ore_panel()
+                self.ore_panel.pos = coord
+                self.static_surface.blit(self.ore_panel.panel_surface, coord)
+
+    def erase_ore_panel(self):
+        if self.ore_panel.pos != None:
+            if self.ore_hover_active:
+                ore_panel_rect = pg.Rect(*self.ore_panel.pos, self.ore_panel.rect.width, self.ore_panel.rect.height)
+                self.static_surface.fill((0, 0, 0, 0), (ore_panel_rect))
+
+                colliding_buttons = []
+                for key, button in self.buttons.items():
+                    pos, button_rect = button.pos, button.rect
+                    if ore_panel_rect.colliderect(button_rect):
+                        self.add_to_update_list((key, True))
+                        colliding_buttons.append(key)
+
+                for key in self.text.keys():
+                    if key not in colliding_buttons:
+                        rendered_text, pos = self.text[key]
+                        text_rect = rendered_text.get_rect()
+                        text_rect = pg.Rect(pos[0], pos[1], text_rect.width, text_rect.height)
+                        if ore_panel_rect.colliderect(text_rect):
+                            self.add_to_update_list((key, False))
+
+            self.update_UI(bypass_dt=True)
+
             
 
     def load_new(self):
@@ -530,6 +587,44 @@ class Button():
     def collidepoint(self, *args):
         return self.rect.collidepoint(*args)
     
+#TODO
+class OrePanel():
+    def __init__(self, terrain, UI_surface):
+        from src.game import Terrain
+        self._terrain: Terrain = terrain
+        self._UI_surface: UISurface = UI_surface
+        self.rect = pg.Rect(0, 0, 140, 165)
+        self.ore = None
+        self.ore_name = None
+        self.ore_value = None
+        self.ore_luck = None
+        self.ore_health = None
+        self.panel_surface = pg.Surface((140, 165))
+        self.panel_color = (0, 0, 0)
+        self.panel_text = {}
+        self.text_color = (255, 255, 255)
+        self.pos = None
+
+    def set_ore(self, ore):
+        self.ore = ore
+        self.ore_name = f"{ore.type.name} Ore"
+        self.ore_luck = f"Chance: {self._terrain._ore_chances[ore.type.value]}/100"
+        self.ore_health = f"Health: {ore.health}/{ore.max_health}"
+        self.ore_value = f"Value: {ore.gold}"
+        self.update_panel()
+
+    def update_text(self, pos, text, font="ubuntu", size=18, color=(255, 255, 255)):
+        font_obj = self._UI_surface.text_fonts.get_font(font, size)
+        rendered_text = font_obj.render(text, True, color)
+        self.panel_surface.blit(rendered_text, pos)
+    
+    def update_panel(self):
+        self.panel_surface.fill(self.panel_color)
+        self.update_text((25, 10), self.ore_name)
+        self.update_text((25, 30), self.ore_luck, size=14)
+        self.update_text((25, 50), self.ore_health, size=14)
+        self.update_text((25, 70), self.ore_value, size=14)
+
 class SpecialEffectSurface(GameSurface):
 
     def __init__(self):

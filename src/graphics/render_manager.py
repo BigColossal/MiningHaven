@@ -30,7 +30,6 @@ class RenderManager:
         self.lighten_buffer_duration = 1500
 
         self._text_handler: gfx.TextHandler = gfx.TextHandler()
-        self.fps_counter = gfx.FPSCounter(self._text_handler, self._screen)
 
         self.MIN_OFFSET = -gfx.TILE_SIZE * gfx.PADDING
         self.MAX_OFFSET_Y = self.map_height - gfx.SCREEN_HEIGHT + (gfx.PADDING * gfx.TILE_SIZE)
@@ -226,6 +225,20 @@ class RenderManager:
                 self.cave_hidden = False
                 self._ui_surface.load_cave_UI()
             self.miner_switch_timer = self.ui_switch_cooloff_cd
+
+    def handle_mouse_hover(self, pos):
+        mouse_x, mouse_y = pos
+        tile_x = int((mouse_x + self.offset_x) // gfx.TILE_SIZE)
+        tile_y = int((mouse_y + self.offset_y) // gfx.TILE_SIZE)
+
+        if 0 <= tile_x < self._terrain.grid_size and 0 <= tile_y < self._terrain.grid_size:
+                ore = self._terrain.data[tile_y][tile_x]
+                if ore.type != self._terrain.terrain_types.Floor and (tile_x, tile_y) in self._terrain.visible_tiles and \
+                    self._ui_surface.ore_hover_active:
+                        self._ui_surface.update_ore_panel(pos, ore)
+                else:
+                    self._ui_surface.erase_ore_panel()
+
 
 
 

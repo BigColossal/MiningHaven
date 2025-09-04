@@ -50,6 +50,7 @@ def main():
     dt = 0
     fps = 60
     events_handler.call_lightening_screen()
+    ui_surface.create_ore_panel(terrain)
 
     while running:
         keys = pg.key.get_pressed()
@@ -57,6 +58,9 @@ def main():
             graphics_engine.move_camera(keys)
         if keys[pg.K_q]:
             graphics_engine.switch_to_miner_UI()
+
+        mouse_pos = pg.mouse.get_pos()
+        graphics_engine.handle_mouse_hover(mouse_pos)
 
         for event in pg.event.get():
             if event.type == pg.QUIT:
