@@ -593,13 +593,13 @@ class OrePanel():
         from src.game import Terrain
         self._terrain: Terrain = terrain
         self._UI_surface: UISurface = UI_surface
-        self.rect = pg.Rect(0, 0, 140, 165)
+        self.rect = pg.Rect(0, 0, 150, 165)
         self.ore = None
         self.ore_name = None
         self.ore_value = None
         self.ore_luck = None
         self.ore_health = None
-        self.panel_surface = pg.Surface((140, 165))
+        self.panel_surface = pg.Surface((150, 165))
         self.panel_color = (0, 0, 0)
         self.panel_text = {}
         self.text_color = (255, 255, 255)
@@ -608,22 +608,25 @@ class OrePanel():
     def set_ore(self, ore):
         self.ore = ore
         self.ore_name = f"{ore.type.name} Ore"
-        self.ore_luck = f"Chance: {self._terrain._ore_chances[ore.type.value]}/100"
+        try:
+            self.ore_luck = f"Chance: {round(self._terrain._ore_chances[ore.type.value], 2)}/100"
+        except KeyError:
+            self.ore_luck = f"Chance: 0/100"
         self.ore_health = f"Health: {ore.health}/{ore.max_health}"
         self.ore_value = f"Value: {ore.gold}"
         self.update_panel()
 
-    def update_text(self, pos, text, font="ubuntu", size=18, color=(255, 255, 255)):
+    def update_text(self, pos, text, font="ubuntu", size=20, color=(255, 255, 255)):
         font_obj = self._UI_surface.text_fonts.get_font(font, size)
         rendered_text = font_obj.render(text, True, color)
         self.panel_surface.blit(rendered_text, pos)
     
     def update_panel(self):
         self.panel_surface.fill(self.panel_color)
-        self.update_text((25, 10), self.ore_name)
-        self.update_text((25, 30), self.ore_luck, size=14)
-        self.update_text((25, 50), self.ore_health, size=14)
-        self.update_text((25, 70), self.ore_value, size=14)
+        self.update_text((30, 10), self.ore_name)
+        self.update_text((15, 30), self.ore_luck, size=16)
+        self.update_text((20, 50), self.ore_health, size=16)
+        self.update_text((35, 70), self.ore_value, size=16)
 
 class SpecialEffectSurface(GameSurface):
 

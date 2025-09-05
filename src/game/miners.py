@@ -203,22 +203,24 @@ class FireMiner(Miner):
             else:
                 targets = [self._target]
 
+            targets_to_animate = []
+
             for target in targets:
                 x, y = target
                 ore = self._terrain.data[y][x]
-                destroyed = True
                 if ore.health > 0:
                     if target != self._target:
                         dmg_factor = 0.1
                     else:
                         dmg_factor = 1
                     destroyed = ore.take_damage(self.damage * dmg_factor)
+                    targets_to_animate.append(target)
                 try:
                     self._terrain.ores_damaged[target] = ((ore.health / ore.max_health) * 100, 2.5)
                 except ZeroDivisionError:
                     self._terrain.ores_damaged[target] = ((0, 0.0))
                     
-            self._terrain._special_gfx_surface.animate_fire(dt, coords=targets)
+            self._terrain._special_gfx_surface.animate_fire(dt, coords=targets_to_animate)
 
             target_x, target_y = self._target
             if self._terrain.data[target_y][target_x].health <= 0:
@@ -241,23 +243,24 @@ class LightningMiner(Miner):
                 path = self.get_chain_path()
             else:
                 path = [self._target]
+            path_to_animate = []
 
             for target in path:
                 x, y = target
                 ore = self._terrain.data[y][x]
-                destroyed = True
                 if ore.health > 0:
                     if target != self._target:
                         dmg_factor = 0.1
                     else:
                         dmg_factor = 1
                     destroyed = ore.take_damage(self.damage * dmg_factor)
+                    path_to_animate.append(target)
                 try:
                     self._terrain.ores_damaged[target] = ((ore.health / ore.max_health) * 100, 2.5)
                 except ZeroDivisionError:
                     self._terrain.ores_damaged[target] = ((0, 0.0))
 
-            self._terrain._special_gfx_surface.animate_electricity(dt, coords=path)
+            self._terrain._special_gfx_surface.animate_electricity(dt, coords=path_to_animate)
 
             target_x, target_y = self._target
             if self._terrain.data[target_y][target_x].health <= 0:
