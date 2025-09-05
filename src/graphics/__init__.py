@@ -2,6 +2,7 @@ from .render_manager import RenderManager
 from .sprite_extraction import extract_sprites, GameSprites
 from .surfaces import CaveSurface, MinerSurface, UISurface, SpecialEffectSurface
 from .text import TextHandler
+from .miner_camera import MinerCamera
 
 SCREEN_WIDTH = 1920
 SCREEN_HEIGHT = 1080

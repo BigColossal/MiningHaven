@@ -34,6 +34,7 @@ class RenderManager:
         self.MIN_OFFSET = -gfx.TILE_SIZE * gfx.PADDING
         self.MAX_OFFSET_Y = self.map_height - gfx.SCREEN_HEIGHT + (gfx.PADDING * gfx.TILE_SIZE)
         self.MAX_OFFSET_X = self.map_width - gfx.SCREEN_WIDTH + (gfx.PADDING * gfx.TILE_SIZE)
+        self.miner_camera = gfx.MinerCamera()
 
         self._visible_rect = pg.Rect(0, 0, gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT)
         self._shadow_visible_rect = pg.Rect(0, 0, gfx.SCREEN_WIDTH, gfx.SCREEN_HEIGHT)
@@ -59,6 +60,7 @@ class RenderManager:
     def load_new_cave(self): # for drawing brand new caves
         self._cave_surface.set_objects()
         self._miner_surface.update_miner_amount()
+        self.miner_camera.update_total_miners(self._miner_surface.miners)
         for surface in self.surfaces:
             surface.load_new()
 
@@ -147,31 +149,50 @@ class RenderManager:
                 
 
     def move_camera(self, keys):
-        move_x = 0
-        move_y = 0
+        if not self.miner_camera.active:
+            move_x = 0
+            move_y = 0
 
-        if keys[pg.K_a]:
-            move_x -= 1
-        if keys[pg.K_d]:
-            move_x += 1
-        if keys[pg.K_w]:
-            move_y -= 1
-        if keys[pg.K_s]:
-            move_y += 1
+            if keys[pg.K_a]:
+                move_x -= 1
+            if keys[pg.K_d]:
+                move_x += 1
+            if keys[pg.K_w]:
+                move_y -= 1
+            if keys[pg.K_s]:
+                move_y += 1
 
-        # Normalize vector if moving diagonally
-        if move_x != 0 and move_y != 0:
-            norm = gfx.CAMERA_MOVEMENT_SPEED / (2 ** 0.5)  # ≈ 0.707
-        else:
-            norm = gfx.CAMERA_MOVEMENT_SPEED
+            # Normalize vector if moving diagonally
+            if move_x != 0 and move_y != 0:
+                norm = gfx.CAMERA_MOVEMENT_SPEED / (2 ** 0.5)  # ≈ 0.707
+            else:
+                norm = gfx.CAMERA_MOVEMENT_SPEED
 
-        self.offset_x += int(move_x * norm)
-        self.offset_y += int(move_y * norm)
+            self.offset_x += int(move_x * norm)
+            self.offset_y += int(move_y * norm)
 
-        self.offset_x = max(self.MIN_OFFSET, min(self.offset_x, self.MAX_OFFSET_X))
-        self.offset_y = max(self.MIN_OFFSET, min(self.offset_y, self.MAX_OFFSET_Y))
-        
-        self.dirty = True
+            self.offset_x = max(self.MIN_OFFSET, min(self.offset_x, self.MAX_OFFSET_X))
+            self.offset_y = max(self.MIN_OFFSET, min(self.offset_y, self.MAX_OFFSET_Y))
+            
+            self.dirty = True
+
+    def handle_miner_camera(self, keys, dt):
+        direction: str = ""
+        if keys[pg.K_LEFT]:
+            direction = "Left"
+        elif keys[pg.K_RIGHT]:
+            direction = "Right"
+        elif keys[pg.K_PERIOD]:
+            direction = "Exit"
+        self.miner_camera.switch_miner(direction, dt)
+
+    def update_miner_camera(self):
+        if self.miner_camera.active:
+            pixel_x, pixel_y = self.miner_camera.handle_miner_updates()
+            self.offset_x = max(self.MIN_OFFSET, min(pixel_x - gfx.SCREEN_WIDTH // 2, self.MAX_OFFSET_X))
+            self.offset_y = max(self.MIN_OFFSET, min(pixel_y - gfx.SCREEN_HEIGHT // 2, self.MAX_OFFSET_Y))
+            if self.miner_camera.camera_changed:
+                self.dirty = True
 
     def darken_screen(self, dt):
         self.dirty = True

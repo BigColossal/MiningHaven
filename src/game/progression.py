@@ -28,6 +28,10 @@ class UpgradesManager:
         self.ore_value *= amount
         self.terrain.ore_value_mult = self.ore_value
         self.terrain.create_ore_golds()
+        for coord in self.terrain.visible_tiles:
+            x, y = coord
+            ore = self.terrain.data[y][x]
+            ore.gold = self.terrain.get_ore_gold(ore.type)
 
     def upgrade_miner_speed(self, id, amount):
         from src.game import Miner

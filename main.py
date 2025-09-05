@@ -18,8 +18,8 @@ ui_surface.set_upgrades_manager(upgrade_manager)
 
 surfaces = [cave_surface, miner_surface, ui_surface, special_gfx_surface]
 miners = []
-lightning_miner_amount = 10
-fire_miner_amount = 10
+lightning_miner_amount = 20
+fire_miner_amount = 20
 for i in range(fire_miner_amount):
     miners.append(FireMiner(terrain))
 
@@ -54,7 +54,9 @@ def main():
 
     while running:
         keys = pg.key.get_pressed()
-        if keys[pg.K_w] or keys[pg.K_a] or keys[pg.K_s] or keys[pg.K_d]:
+        if keys[pg.K_LEFT] or keys[pg.K_RIGHT] or keys[pg.K_PERIOD]:
+            graphics_engine.handle_miner_camera(keys, dt)
+        elif keys[pg.K_w] or keys[pg.K_a] or keys[pg.K_s] or keys[pg.K_d]:
             graphics_engine.move_camera(keys)
         if keys[pg.K_q]:
             graphics_engine.switch_to_miner_UI()
@@ -108,6 +110,7 @@ def main():
         terrain.miner_decision_make(dt)
         graphics_engine.update_healthbars(dt)
         graphics_engine.check_miner_pos()
+        graphics_engine.update_miner_camera()
 
         graphics_engine.render(dt, fps)
         dt = clock.tick(gfx.FPS) / 1000
