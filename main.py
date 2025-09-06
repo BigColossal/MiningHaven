@@ -18,8 +18,8 @@ ui_surface.set_upgrades_manager(upgrade_manager)
 
 surfaces = [cave_surface, miner_surface, ui_surface, special_gfx_surface]
 miners = []
-lightning_miner_amount = 20
-fire_miner_amount = 20
+lightning_miner_amount = 3
+fire_miner_amount = 2
 for i in range(fire_miner_amount):
     miners.append(FireMiner(terrain))
 

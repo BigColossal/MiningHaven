@@ -8,7 +8,7 @@ class UpgradesManager:
         self.terrain: Terrain = terrain
         self.miner_speed_click_increase = 0.1
         self.miner_speed_boost_limit = 5
-        self.miner_speed_boost_decay = 0.15
+        self.miner_speed_boost_decay = 0.015
         self.time_since_last_click = 0
         self.decay_rate = 0.025
         self.decay_rate_timer = self.decay_rate

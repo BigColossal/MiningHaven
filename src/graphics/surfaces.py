@@ -633,17 +633,26 @@ class OrePanel():
         self.ore_value = f"Value: {ore.gold}"
         self.update_panel()
 
-    def update_text(self, pos, text, font="ubuntu", size=20, color=(255, 255, 255)):
-        font_obj = self._UI_surface.text_fonts.get_font(font, size)
-        rendered_text = font_obj.render(text, True, color)
+    def update_text(self, y_pos, text, font="ubuntu", size=20, color=(255, 255, 255)):
+        while True:
+            font_obj = self._UI_surface.text_fonts.get_font(font, size)
+            rendered_text = font_obj.render(text, True, color)
+            text_width = rendered_text.get_width()
+            if self.rect.width > text_width:
+                padding = (self.rect.width - text_width) / 2
+                pos = (padding, y_pos)
+                break
+            else:
+                size -= 1
+
         self.panel_surface.blit(rendered_text, pos)
     
     def update_panel(self):
         self.panel_surface.fill(self.panel_color)
-        self.update_text((30, 10), self.ore_name)
-        self.update_text((15, 30), self.ore_luck, size=16)
-        self.update_text((20, 50), self.ore_health, size=16)
-        self.update_text((35, 70), self.ore_value, size=16)
+        self.update_text(10, self.ore_name)
+        self.update_text(30, self.ore_luck, size=16)
+        self.update_text(50, self.ore_health, size=16)
+        self.update_text(70, self.ore_value, size=16)
 
 class SpecialEffectSurface(GameSurface):
 

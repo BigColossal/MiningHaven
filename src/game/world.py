@@ -15,11 +15,11 @@ class Terrain:
 
         self._miners: list[Miner] = None
 
-        self.grid_size = 50
+        self.grid_size = 16
         self.middle = None
         self.visible_tiles = None
 
-        self._ore_amount = 9
+        self._ore_amount = 8
         self._ore_appearance_rate = 30
         self.ore_base_chances = []
         self.create_ore_chances()
