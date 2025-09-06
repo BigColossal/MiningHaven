@@ -411,10 +411,10 @@ class UISurface(GameSurface):
         self.fill_screen("invis")
         self.create_button(name="Ore Luck Upgrade", text="Upgrade Luck", font="ubuntu", text_size=24, 
                            text_color=(200, 255, 200), height=50, width=150,x=15, 
-                           y=gfx.SCREEN_HEIGHT - 65, background_color=(0, 0, 0), rounded=True)
+                           y=gfx.SCREEN_HEIGHT - 65, background_color=(10, 10, 10), rounded=True)
         self.create_button(name="Ore Value Upgrade", text="Upgrade Value", font="ubuntu", text_size=24, 
                            text_color=(200, 255, 200), height=50, width=165,x=190, 
-                           y=gfx.SCREEN_HEIGHT - 65, background_color=(0, 0, 0), rounded=True)
+                           y=gfx.SCREEN_HEIGHT - 65, background_color=(10, 10, 10), rounded=True)
         
         self.create_button(name="Miner Boost", text=f"Current Boost: {round(Miner.global_miner_speed_boost, 3)}x", font="ubuntu", text_size=24,
                            text_color=(255, 255, 255), height=50, width=250, x=gfx.SCREEN_WIDTH / 2, 
@@ -577,6 +577,7 @@ class Button():
         self.round_radius = 10 if round else 0
         self.rect = pg.Rect(pos[0], pos[1], width, height)
         self.surface_design = surface_design
+        self.hovered = False
 
     def render(self, surface):
         rect = pg.draw.rect(surface, self.color, self.rect, border_radius=self.round_radius)
@@ -587,7 +588,23 @@ class Button():
     def collidepoint(self, *args):
         return self.rect.collidepoint(*args)
     
-#TODO
+    def hovered_effect(self):
+        self.hovered = True
+        r, g, b = self.color
+        r += 15
+        g += 15
+        b += 15
+        self.color = (r, g, b)
+
+    def non_hovered_effect(self):
+        self.hovered = False
+        r, g, b = self.color
+        r -= 15
+        g -= 15
+        b -= 15
+        self.color = (r, g, b)
+    
+
 class OrePanel():
     def __init__(self, terrain, UI_surface):
         from src.game import Terrain

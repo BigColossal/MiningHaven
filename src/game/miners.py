@@ -15,13 +15,13 @@ class Miner():
         self._path = None
         self._target = (None, None)
 
-        self.base_movement_speed = 10
-        self.base_mine_cd = 0.5
+        self.base_movement_speed = 15
+        self.base_mine_cd = 0.075
         self.movement_speed = self.base_movement_speed
         self.mine_cd = self.base_mine_cd
 
         self.cd_timer = self.mine_cd
-        self.damage = 35
+        self.damage = 65
         self.miner_type = "Normal"
         self.passive_active_chance = 0.3
 

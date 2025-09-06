@@ -249,6 +249,18 @@ class RenderManager:
 
     def handle_mouse_hover(self, pos):
         mouse_x, mouse_y = pos
+        for name, button in self._ui_surface.buttons.items():
+            if button.rect.collidepoint(pos):
+                if not button.hovered:
+                    button.hovered_effect()
+                    self._ui_surface.add_to_update_list((name, True))
+                self._ui_surface.erase_ore_panel()
+                return
+
+            if button.hovered:
+                button.non_hovered_effect()
+                self._ui_surface.add_to_update_list((name, True))
+
         tile_x = int((mouse_x + self.offset_x) // gfx.TILE_SIZE)
         tile_y = int((mouse_y + self.offset_y) // gfx.TILE_SIZE)
 

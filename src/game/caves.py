@@ -43,7 +43,7 @@ class CaveHelper:
 
         # Determine number of caves based on grid size.
         if 100 >= self.grid_size >= 20:
-            cave_amount = round((self.grid_size - 10) // 2)
+            cave_amount = (self.grid_size - 10) // 2
 
         if cave_amount != 0:
             for i in range(1, cave_amount + 1):
@@ -81,7 +81,7 @@ class CaveHelper:
         attempts = 0
 
         # Try up to 200 random positions within grid bounds to find a valid cave spot.
-        while attempts < 200:
+        while attempts < 250:
             x = random.randint(0, self.grid_size - size)
             y = random.randint(0, self.grid_size - size)
 
