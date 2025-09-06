@@ -21,7 +21,7 @@ class Miner():
         self.mine_cd = self.base_mine_cd
 
         self.cd_timer = self.mine_cd
-        self.damage = 65
+        self.damage = 1000
         self.miner_type = "Normal"
         self.passive_active_chance = 0.3
 

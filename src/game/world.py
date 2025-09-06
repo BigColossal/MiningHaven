@@ -19,7 +19,7 @@ class Terrain:
         self.middle = None
         self.visible_tiles = None
 
-        self._ore_amount = 3
+        self._ore_amount = 9
         self._ore_appearance_rate = 30
         self.ore_base_chances = []
         self.create_ore_chances()
@@ -196,29 +196,31 @@ class Terrain:
         change_rate = 4
         chances = []
         for i in range(self._ore_amount):
-            chances.insert(0, round(init_chance * max(1, ((change_rate ** i) * (i * 1.05))), 1))
+            chances.append(round(init_chance * max(1, ((change_rate ** i) * (i * 1.05))), 1))
 
         self.ore_base_chances = chances
 
-    def modify_chances_with_luck(self, soft_cap=65, decay_rate=0.5):
+    def modify_chances_with_luck(self, soft_cap=3, decay_rate=0.5):
         modified = {}
-        index = 2  # Start from 1 so we reserve index 0 for stone
-        for base_chance in self.ore_base_chances:
-            num = base_chance
-            chance = self.ore_luck * num
 
+        for i, base_chance in enumerate(self.ore_base_chances):
+            ore_index = i + 2  # Reserve index 1 for stone
+            chance = self.ore_luck /  base_chance
+
+            # Apply soft cap and decay
             if chance > soft_cap:
                 overflow = chance - soft_cap
                 chance = soft_cap - (overflow * decay_rate)
-                if index == len(self.ore_base_chances) + 1:
-                    chance = max(1, chance) # Make the last, most valuable ore always spawn no matter what
 
+            # Handle ultra-rare fallback logic
             if chance <= 0.01:
-                index += 1  # Skip negligible chance ores
-                continue
+                # If this is the last ore and no others qualified, force it to spawn
+                if i == len(self.ore_base_chances) - 1 and not modified:
+                    chance = 1
+                else:
+                    continue
 
-            modified[index] = chance
-            index += 1
+            modified[ore_index] = chance
 
         # Normalize to match ore appearance rate
         total = sum(modified.values())

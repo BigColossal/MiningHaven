@@ -6,6 +6,12 @@ class terrainTypes(Enum):
     Coal = 2
     Copper = 3
     Iron = 4
+    Graphite = 5
+    Manganese = 6
+    Nickel = 7
+    Silver = 8
+    Uranium = 9
+    Emberrite = 10
 
 class Ore:
     def __init__(self, type, health, gold, pos, event_handler):

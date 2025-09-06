@@ -80,6 +80,12 @@ def extract_sprites(use_smooth_for_surrounding=False) -> GameSprites:
         "Copper": get_tile(ore_sheet, SRC_TILE, 0, 1, TARGET),
         "Iron": get_tile(ore_sheet, SRC_TILE, 1, 1, TARGET),
         "Coal": get_tile(ore_sheet, SRC_TILE, 0, 2, TARGET),
+        "Graphite": get_tile(ore_sheet, SRC_TILE - 1, 1, 2, TARGET),
+        "Manganese": get_tile(ore_sheet, SRC_TILE, 2, 0, TARGET),
+        "Emberrite": get_tile(ore_sheet, SRC_TILE, 2, 1, TARGET),
+        "Nickel": get_tile(ore_sheet, SRC_TILE, 2, 2, TARGET),
+        "Silver": get_tile(ore_sheet, SRC_TILE, 3, 0, TARGET),
+        "Uranium": get_tile(ore_sheet, SRC_TILE, 3, 1, TARGET)
     }
 
     shadow_tileset = {

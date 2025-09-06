@@ -629,7 +629,7 @@ class OrePanel():
             self.ore_luck = f"Chance: {round(self._terrain._ore_chances[ore.type.value], 2)}/100"
         except KeyError:
             self.ore_luck = f"Chance: 0/100"
-        self.ore_health = f"Health: {ore.health}/{ore.max_health}"
+        self.ore_health = f"Health: {ore.health:.0f}/{ore.max_health:.0f}"
         self.ore_value = f"Value: {ore.gold}"
         self.update_panel()
 

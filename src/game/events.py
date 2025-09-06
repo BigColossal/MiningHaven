@@ -58,9 +58,9 @@ class EventHandler:
 
     def call_button_type(self, button_name):
         if button_name == "Ore Luck Upgrade":
-            pg.event.post(pg.event.Event(GameEvents.LUCK_UPGRADED.value, {'multiplier': 1.5}))
+            pg.event.post(pg.event.Event(GameEvents.LUCK_UPGRADED.value, {'multiplier': 1.25}))
         elif button_name == "Ore Value Upgrade":
-            pg.event.post(pg.event.Event(GameEvents.ORE_VALUE_UPGRADED.value, {'multiplier': 1.75}))
+            pg.event.post(pg.event.Event(GameEvents.ORE_VALUE_UPGRADED.value, {'multiplier': 1.5}))
         elif button_name == "Miner Boost":
             pg.event.post(pg.event.Event(GameEvents.MINER_BOOST_CLICKED.value))
 
