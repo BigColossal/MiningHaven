@@ -287,6 +287,8 @@ class MinerSurface(GameSurface):
                 color = (128, 0 ,0)
             elif miner_type == "Lightning":
                 color = (200, 200, 5)
+            elif miner_type == "Light":
+                color = (220, 220, 160)
             circle_size = int(gfx.TILE_SIZE / 2)
             pg.draw.circle(surface, color, (circle_size, circle_size), circle_size - (gfx.TILE_SIZE / 4))
             self.sprites[miner_type] = surface
@@ -656,13 +658,17 @@ class OrePanel():
 
 class SpecialEffectSurface(GameSurface):
 
-    def __init__(self):
+    def __init__(self, miners):
+        from src.game import Miner
         super().__init__()
         self.fire_effect_cd: float = 0.25
         self.fire_tiles: dict[tuple[int, int]: float] = {}
 
         self.electricity_effect_cd: float = 0.25
         self.electricity_tiles: dict[tuple[int, int]: float] = {}
+
+        self.miners = miners
+        self.miner_glows: dict[Miner: pg.Surface] = {}
 
     def get_fill_rect(self, x, y):
         return (x * gfx.TILE_SIZE, y * gfx.TILE_SIZE, gfx.TILE_SIZE, gfx.TILE_SIZE)
@@ -720,6 +726,41 @@ class SpecialEffectSurface(GameSurface):
             color = (255, 255, 0, transparency)
 
             self.static_surface.fill(color, self.get_fill_rect(x, y))
+
+    def set_up_miner_glows(self):
+        for miner in self.miners:
+            self.add_glow(miner)
+        
+    def add_glow(self, miner):
+        self.miner_glows[miner] = self.create_circular_glow((200, 200, 200))
+
+    #TODO
+    def render_miner_glow(self):
+        pass
+
+    def create_circular_glow(radius, color, glow_intensity=200):
+        import math
+        radius *= gfx.TILE_SIZE
+        glow_surface = pg.Surface((radius * 2, radius * 2), pg.SRCALPHA)
+
+        for x in range(radius * 2):
+            for y in range(radius * 2):
+                dx = x - radius
+                dy = y - radius
+                dist = math.hypot(dx, dy)
+
+                if dist <= radius:
+                    normalized = dist / radius
+
+                    # Strong center glow + steep outer fade
+                    if normalized < 0.1:
+                        alpha = glow_intensity
+                    else:
+                        alpha = int((1.0 - normalized) ** 3.5 * glow_intensity)
+
+                    glow_surface.set_at((x, y), (*color, max(0, min(alpha, 255))))
+
+        return glow_surface
 
     def load_new(self):
         self.create_static_surface()

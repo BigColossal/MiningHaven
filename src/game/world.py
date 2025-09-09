@@ -15,7 +15,7 @@ class Terrain:
 
         self._miners: list[Miner] = None
 
-        self.grid_size = 16
+        self.grid_size = 26
         self.middle = None
         self.visible_tiles = None
 

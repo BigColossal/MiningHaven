@@ -2,7 +2,7 @@ from .ores import terrainTypes, Ore
 from .world import Terrain
 from .events import EventHandler
 from .caves import CaveHelper
-from .miners import Miner, FireMiner, LightningMiner
+from .miners import Miner, FireMiner, LightningMiner, LightMiner
 from .objects import GameObject
 from .progression import UpgradesManager
 

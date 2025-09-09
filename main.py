@@ -1,4 +1,4 @@
-from src.game import Terrain, EventHandler, Miner, UpgradesManager, FireMiner, LightningMiner
+from src.game import Terrain, EventHandler, Miner, UpgradesManager, FireMiner, LightningMiner, LightMiner
 import src.graphics as gfx
 import pygame as pg
 import math
@@ -19,12 +19,18 @@ ui_surface.set_upgrades_manager(upgrade_manager)
 surfaces = [cave_surface, miner_surface, ui_surface, special_gfx_surface]
 miners = []
 lightning_miner_amount = 3
-fire_miner_amount = 2
+fire_miner_amount = 3
+light_miner_amount = 3
 for i in range(fire_miner_amount):
     miners.append(FireMiner(terrain))
 
 for i in range(lightning_miner_amount):
     miners.append(LightningMiner(terrain))
+
+for i in range(light_miner_amount):
+    miners.append(LightMiner(terrain))
+
+Miner.set_miners(miners)
 
 upgrade_manager.set_miners(miners)
 
@@ -107,6 +113,7 @@ def main():
             upgrade_manager.global_miner_speed_decay(dt)
             ui_surface.update_text("Miner Boost", f"Current Boost: {round(Miner.global_miner_speed_boost, 3)}x", color=(255, 255, 255), button=True)
 
+        Miner.handle_passive_abilities()
         terrain.miner_decision_make(dt)
         graphics_engine.update_healthbars(dt)
         graphics_engine.check_miner_pos()

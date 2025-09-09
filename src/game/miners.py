@@ -2,6 +2,7 @@ import pygame as pg
 
 class Miner():
     miner_amount = 0
+    miners = []
     global_miner_speed_boost = 1
     def __init__(self, terrain):
         from src.game import Terrain
@@ -21,9 +22,24 @@ class Miner():
         self.mine_cd = self.base_mine_cd
 
         self.cd_timer = self.mine_cd
-        self.damage = 1000
+        self.original_damage = 1000
+        self.damage = self.original_damage
         self.miner_type = "Normal"
         self.passive_active_chance = 0.3
+        self.light_boosted = False
+
+    @staticmethod
+    def set_miners(miners):
+        Miner.miners = miners
+
+    @staticmethod
+    def handle_passive_abilities():
+        for miner in Miner.miners:
+            miner.handle_passive_ability()
+
+    def handle_passive_ability(self):
+        pass
+            
 
     def set_boost(self):
         self.movement_speed = round(self.base_movement_speed * Miner.global_miner_speed_boost, 3)
@@ -318,3 +334,26 @@ class LightningMiner(Miner):
 
         dfs(self._target, [])
         return best_path
+
+class LightMiner(Miner):
+    def __init__(self, terrain):
+        super().__init__(terrain)
+        self.passive_radius = 5
+        self.boost_type = "Damage"
+        self.miner_type = "Light"
+
+    def handle_passive_ability(self):
+        for miner in Miner.miners:
+            x, y = self.pos
+            other_x, other_y = miner.pos
+            difference_x, difference_y = abs(x - other_x), abs(y - other_y)
+            if difference_x <= self.passive_radius or difference_y <= self.passive_radius:
+                if not miner.light_boosted:
+                    miner.light_boosted = True
+                    if self.boost_type == "Damage":
+                        miner.damage *= 1.2
+            else:
+                miner.damage = miner.original_damage
+                miner.light_boosted = False
+
+            
